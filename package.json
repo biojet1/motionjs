@@ -1,0 +1,46 @@
+{
+  "name": "3motion",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "license": "AGPL-version-3.0",
+  "private": false,
+  "engines": {
+    "node": ">= 14.0.0",
+    "npm": ">= 6.0.0"
+  },
+  "homepage": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "exports": {
+    ".": "./dist/lib.js"
+  },
+  "bugs": "",
+  "keywords": [],
+  "author": {
+    "name": "",
+    "email": "",
+    "url": ""
+  },
+  "contributors": [],
+  "scripts": {
+    "dev": "",
+    "test": "",
+    "clean": "rm -r dist/*"
+  },
+  "dependencies": {
+    "puppeteer": "^22.9.0",
+    "tap": "^18.8.0",
+    "three": "^0.164.1",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.32",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

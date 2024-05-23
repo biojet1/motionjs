@@ -1,0 +1,11 @@
+version: "3"
+
+tasks:
+  compile:
+    # method: timestamp
+    sources:
+      - src/**/*.ts
+    generates:
+      - dist/**/*.js
+    cmds:
+      - npx tsc -d --sourcemap
