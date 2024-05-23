@@ -114,6 +114,7 @@ export class Animatable<V> {
                         return this.lerp_value(r, p.value, k.value);
                     } else if (frame < k.time) {
                         return this.get_value_off(frame);
+                        // return k.value;
                     } else {
                         return k.value;
                     }
@@ -122,6 +123,7 @@ export class Animatable<V> {
             }
             if (p) {
                 return this.get_value_off(frame);
+                // return p.value;
             }
             throw new Error(`empty keyframe list`);
         } else {
@@ -197,19 +199,3 @@ export class Animatable<V> {
     }
 }
 
-export class NumericProperty extends Animatable<number> {
-    owner: any;
-    name: string;
-    constructor(owner: any, name: string) {
-        super();
-        this.owner = owner;
-        this.name = name;
-    }
-
-    override lerp_value(r: number, a: number, b: number): number {
-        return a * (1 - r) + b * r;
-    }
-    override add_value(a: number, b: number): number {
-        return a + b;
-    }
-}

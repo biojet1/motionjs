@@ -37,6 +37,7 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@types/three": "^0.164.1",
     "@types/yargs": "^17.0.32",
     "typescript": "^5.4.5",
     "vite": "^5.2.11",

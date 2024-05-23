@@ -2,6 +2,7 @@ import { Track } from "./track/track.js";
 
 export * from "./keyframe.js";
 export * from "./track/index.js";
+export * from "./properties.js";
 
 export function animate(fps: number, start: number, end: number, update: ((frame: number) => void)) {
 
@@ -13,7 +14,7 @@ export function animate(fps: number, start: number, end: number, update: ((frame
     function render(currentTime: DOMHighResTimeStamp) {
         const t = performance.now();
         {
-            if (((frame + 1) * mspf) % 1000 == 0) {
+            if (((frame) * mspf) % 1000 == 0) {
                 console.info(`${frame} t=${t} frames=${frames} ${start}-${end}`);
             }
         }
@@ -26,6 +27,53 @@ export function animate(fps: number, start: number, end: number, update: ((frame
         else {
             requestAnimationFrame(render);
         }
+    }
+    requestAnimationFrame(render);
+
+}
+
+export function animate2({ fps, start = 0, end, update, frames = -1 }: { fps: number, start: number, end: number, frames: number, update: ((frame: number) => void) }) {
+
+
+    const mspf = 1000 / fps; // miliseconds per frame
+    // const frames = end - start + 1;
+    let frame = start;
+    if (frames < 0) {
+        if (Number.isFinite(end)) {
+            if (start >= end) {
+                throw new Error(`Invalid end=${end}`);
+            }
+            frames = end - start + 1;
+        } else {
+            throw new Error(`No frames`);
+        }
+    }
+    if (frames < 1) {
+        throw new Error(`Invalid frames=${frames}`);
+    }
+
+    function render(currentTime: DOMHighResTimeStamp) {
+        const t = performance.now();
+        {
+            if (((frame) * mspf) % 1000 == 0) {
+                console.info(`${frame} t=${t} frames=${frames} ${start}-${end}`);
+            }
+        }
+        update(frame++);
+        if (frame < end) {
+            if (frames > 0) {
+                frame = frame % frames;
+            }
+
+            const excess = mspf - (performance.now() - t);
+            if (excess > 0) {
+                setTimeout(() => requestAnimationFrame(render), excess);
+            }
+            else {
+                requestAnimationFrame(render);
+            }
+        }
+
     }
     requestAnimationFrame(render);
 
