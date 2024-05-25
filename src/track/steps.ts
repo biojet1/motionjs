@@ -98,9 +98,17 @@ export class StepA extends Action {
                 }
             });
             // drop property not present
-            for (const [k, _] of Object.entries(this._vars)) {
+            for (const [k, prop] of Object.entries(this._vars)) {
                 if (names.indexOf(k) < 0) {
                     delete vars[k];
+                } else {
+                    if (Array.isArray(prop)) {
+                        for (const x of prop) {
+                            parent.add_prop(x);
+                        }
+                    } else {
+                        parent.add_prop(prop);
+                    }
                 }
             }
             // console.log("vars", vars, this._vars);

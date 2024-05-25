@@ -1,7 +1,6 @@
 import { Animatable } from "./keyframe";
 
-
-export class NumericProperty extends Animatable<number> {
+export class Property<V> extends Animatable<V> {
     owner: any;
     name: string;
     constructor(owner: any, name: string) {
@@ -9,6 +8,10 @@ export class NumericProperty extends Animatable<number> {
         this.owner = owner;
         this.name = name;
     }
+}
+
+export class NumericProperty extends Property<number> {
+
 
     override lerp_value(r: number, a: number, b: number): number {
         return a * (1 - r) + b * r;
@@ -20,14 +23,8 @@ export class NumericProperty extends Animatable<number> {
 
 import { Color, Vector3 } from 'three';
 
-export class HSLProperty extends Animatable<Vector3> {
-    owner: any;
-    name: string;
-    constructor(owner: any, name: string) {
-        super();
-        this.owner = owner;
-        this.name = name;
-    }
+export class HSLProperty extends Property<Vector3> {
+
 
     override lerp_value(r: number, a: Vector3, b: Vector3): Vector3 {
 
@@ -38,14 +35,8 @@ export class HSLProperty extends Animatable<Vector3> {
         return a.add(b);
     }
 }
-export class ColorProperty extends Animatable<Color> {
-    owner: any;
-    name: string;
-    constructor(owner: any, name: string) {
-        super();
-        this.owner = owner;
-        this.name = name;
-    }
+export class ColorProperty extends Property<Color> {
+
 
     override lerp_value(r: number, a: Color, b: Color): Color {
 

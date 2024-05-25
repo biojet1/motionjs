@@ -1,87 +1,12 @@
-import { cubic_bezier_y_of_x } from "./bezier";
-
-export interface KeyframeEntry<V> {
-    time: number;
-    value: V;
-    easing?: Iterable<number> | boolean;
-}
-
-export class Keyframes<V> extends Array<KeyframeEntry<V>> {
-    push_value(time: number, value: V): KeyframeEntry<V> {
-        let last = this[this.length - 1];
-        if (last) {
-            if (last.time == time) {
-                last.value = value;
-                return last;
-            } else if (time < last.time) {
-                throw new Error(`keyframe is incremental`);
-            }
-        }
-        const kf = { time, value };
-        this.push({ time, value });
-        return kf;
-    }
-}
-
-function _off_fun(repeat_count: number, S: number, E: number, bounce: boolean = false) {
-    if (S < E) {
-        if (repeat_count < 0) {
-            repeat_count = Infinity;
-        } else if (repeat_count == 0) {
-            throw Error(`Unexpected`);
-        }
-        const d = (E - S); // duration
-        if (bounce) {
-            const i = (d + 1) * 2 - 1; // iter duration
-            const p = (i - 1);
-            const h = p / 2;
-            const a = Math.floor(p * repeat_count) + 1; // active duration
-            const Z = S + a; // past end frame
-            return function fn(frame: number) {
-                if (frame < S) {
-                    return S;
-                } else if (frame < Z) {
-                    return S + (h - Math.abs(((frame - S) % p) - h));
-                } else {
-                    return Z - 1;
-                }
-            }
-        } else {
-            const i = d + 1; // iter duration
-            const a = Math.floor(repeat_count * i); // active duration
-            const Z = S + a; // pass end frame
-            return function fn(frame: number) {
-                if (frame < S) {
-                    return S;
-                } else if (frame < Z) {
-                    return S + (frame - S) % i;
-                } else {
-                    return Z - 1;
-                }
-            }
-        }
-    } else if (S === E) {
-        return function fn(frame: number) {
-            return S;
-        }
-    } else {
-        throw Error(`Unexpected`);
-    }
-}
-function ratio_at(a: Iterable<number>, t: number) {
-    const [ox, oy, ix, iy] = a;
-    return cubic_bezier_y_of_x([0, 0], [ox, oy], [ix, iy], [1, 1])(t);
-}
 
 ////
+
+import { Keyframes, offset_fun, ratio_at } from "./kfhelper";
 
 export class Animatable<V> {
     value: Keyframes<V> = new Keyframes<V>();
     repeat_count?: number;
     bounce?: boolean;
-    iter_dur?: number;
-    active_dur?: number;
-
     // static
     lerp_value(ratio: number, a: V, b: V): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
@@ -136,15 +61,12 @@ export class Animatable<V> {
     // static
     get_value_off(frame: number): V {
         const { value } = this;
-        if (!(value instanceof Keyframes)) {
-            throw Error(`Unexpected by '${this.constructor.name}'`);
-        }
         const first = value.at(0);
         if (first) {
             const last = value.at(-1);
             if (last) {
                 let { repeat_count = 1, bounce } = this;
-                const fn = _off_fun(repeat_count, first.time, last.time, bounce);
+                const fn = offset_fun(repeat_count, first.time, last.time, bounce, this);
                 return (this.get_value_off = function (frame: number) {
                     return this.get_value(fn(frame));
                 }).call(this, frame);

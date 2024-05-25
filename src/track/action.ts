@@ -23,6 +23,7 @@ export interface IParent {
     easing?: Iterable<number> | boolean;
     frame_rate: number;
     to_frame(sec: number): number;
+    add_prop(prop: IProperty<any>): void;
 }
 
 export class Action implements IAction {
@@ -48,14 +49,14 @@ export class Action implements IAction {
 export abstract class Actions extends Array<Action | Actions> implements IAction {
     _start: number = -Infinity;
     _end: number = -Infinity;
-    frame_rate = -Infinity;
+    // frame_rate = -Infinity;
     _hint_dur?: number;
     _easing?: Iterable<number> | boolean;
     ready(parent: IParent): void {
         this._easing = this._easing ?? parent.easing;
-        this.frame_rate = parent.frame_rate;
+        // this.frame_rate = parent.frame_rate;
         if (this._hint_dur != undefined) {
-            this._hint_dur = this.to_frame(this._hint_dur);
+            this._hint_dur = parent.to_frame(this._hint_dur);
         }
     }
     run() {
@@ -69,9 +70,9 @@ export abstract class Actions extends Array<Action | Actions> implements IAction
     get_active_dur() {
         return this._end - this._start;
     }
-    to_frame(sec: number) {
-        return Math.round(this.frame_rate * sec);
-    }
+    // to_frame(sec: number) {
+    //     return Math.round(this.frame_rate * sec);
+    // }
     abstract resolve(frame: number, base_frame: number, hint_dur: number): void;
 }
 
@@ -85,7 +86,7 @@ export class SeqA extends Actions {
         _delay && (this._delay = parent.to_frame(_delay));
         _stagger && (this._stagger = parent.to_frame(_stagger));
         for (const act of this) {
-            act.ready(this);
+            act.ready(parent);
         }
     }
 
@@ -137,7 +138,7 @@ export class ParA extends Actions {
     ready(parent: IParent): void {
         super.ready(parent);
         for (const act of this) {
-            act.ready(this);
+            act.ready(parent);
         }
     }
     resolve(frame: number, base_frame: number, hint_dur_: number): void {
@@ -185,6 +186,9 @@ export class ToA extends Action {
             this._dur = (dur == undefined) ? undefined : parent.to_frame(dur);
             if (!_easing) {
                 this._easing = parent.easing;
+            }
+            for (const prop of props) {
+                parent.add_prop(prop);
             }
         };
         this.run = function (): void {
