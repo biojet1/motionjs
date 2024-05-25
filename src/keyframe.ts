@@ -7,11 +7,16 @@ export class Animatable<V> {
     value: Keyframes<V> = new Keyframes<V>();
     repeat_count?: number;
     bounce?: boolean;
+    _end?: number;
+    _start?: number;
     // static
     lerp_value(ratio: number, a: V, b: V): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
     }
     add_value(a: V, b: V): V {
+        throw Error(`Not implemented by '${this.constructor.name}'`);
+    }
+    initial_value(): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
     }
     check_value(x: any): V {
@@ -50,6 +55,7 @@ export class Animatable<V> {
                 return this.get_value_off(frame);
                 // return p.value;
             }
+            // return this.initial_value();
             throw new Error(`empty keyframe list`);
         } else {
             if (value == null) {
@@ -65,11 +71,16 @@ export class Animatable<V> {
         if (first) {
             const last = value.at(-1);
             if (last) {
-                let { repeat_count = 1, bounce } = this;
-                const fn = offset_fun(repeat_count, first.time, last.time, bounce, this);
-                return (this.get_value_off = function (frame: number) {
-                    return this.get_value(fn(frame));
-                }).call(this, frame);
+                let { repeat_count, bounce } = this;
+                const fo = offset_fun(repeat_count, first.time, last.time, bounce, this);
+                const fg = (this.get_value_off = function (frame: number) {
+                    return this.get_value(fo(frame));
+                })
+                if (Number.isNaN(frame)) {
+                    throw new TypeError();
+                } else {
+                    return fg.call(this, frame);
+                }
             }
         }
         throw Error(`Unexpected by '${this.constructor.name}'`);
@@ -94,7 +105,7 @@ export class Animatable<V> {
                 } else {
                     if (start != last.time) {
                         throw new Error(
-                            `unexpected start=${start} last.time=${last.time} time=${frame} value=${value}`
+                            `unexpected start=${start} last.time=${last.time} time=${frame} value=${value} by '${this.constructor.name}'`
                         );
                     }
                 }
@@ -118,6 +129,25 @@ export class Animatable<V> {
             }
         }
         return kfs.push_value(frame, value);
+    }
+
+    frame_range(): [number, number] {
+        {
+            const { _end } = this;
+            if (_end == undefined) {
+                try {
+                    this.get_value_off(NaN);
+                } catch (e) {
+
+                }
+            }
+        }
+        const { _start, _end } = this;
+        if (_end == undefined || _start == undefined) {
+            throw Error(`Unexpected by '${this.constructor.name}'`);
+        }
+
+        return [_start, _end];
     }
 }
 

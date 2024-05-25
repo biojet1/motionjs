@@ -8,6 +8,8 @@ export interface IProperty<V> {
         add?: boolean
     ): any;
     check_value(x: any): V;
+    add_value(a: V, b: V): V;
+    initial_value(): V;
 }
 
 export interface IAction {

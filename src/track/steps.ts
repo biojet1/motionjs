@@ -34,8 +34,73 @@ interface Params {
     repeat?: number;
     max_dur?: number;
 }
-const FIRST = {};
+// const FIRST = {};
 const LAST = {};
+
+class Stepper {
+    do<V>(
+        step: StepA,
+        prop: IProperty<V>,
+        frame: number,
+        easing?: Iterable<number> | boolean
+    ): V {
+        throw new Error(`Unexpected by '${this.constructor.name}'`);
+    }
+}
+
+class Add extends Stepper {
+    value: any;
+    constructor(value: any) {
+        super();
+        this.value = value;
+    }
+    do<V>(
+        step: StepA,
+        prop: IProperty<V>,
+        frame: number,
+        easing?: Iterable<number> | boolean
+    ): V {
+        const v = prop.check_value(this.value);
+        const p = prop.get_value(step._prev_frame ?? NaN);
+        return prop.add_value(p, v);
+    }
+}
+
+class Inital extends Stepper {
+    do<V>(
+        step: StepA,
+        prop: IProperty<V>,
+        frame: number,
+        easing?: Iterable<number> | boolean
+    ): V {
+        return prop.initial_value();
+    }
+}
+class First extends Stepper {
+    do<V>(
+        step: StepA,
+        prop: IProperty<V>,
+        frame: number,
+        easing?: Iterable<number> | boolean
+    ): V {
+        return prop.get_value(step._start);
+    }
+}
+class Last extends Stepper {
+    do<V>(
+        step: StepA,
+        prop: IProperty<V>,
+        frame: number,
+        easing?: Iterable<number> | boolean
+    ): V {
+        const { _prev_value } = step;
+        if (_prev_value == undefined) {
+            throw new Error(`Unexpected`);
+        }
+        return _prev_value;
+    }
+}
+
 export class StepA extends Action {
     _steps: Array<UserEntry>;
     _max_dur?: number;
@@ -48,21 +113,16 @@ export class StepA extends Action {
     constructor(
         steps: Array<UserEntry>,
         vars: PropMap,
-        {
-            dur,
-            easing,
-            bounce,
-            repeat,
-            max_dur,
-        }: Params
+        { dur, easing, bounce, repeat, max_dur }: Params
     ) {
         super();
         this._steps = steps;
         this._vars = vars;
         this._base_frame = Infinity;
         this.ready = function (parent: IParent): void {
-            this._dur = (dur == undefined) ? undefined : parent.to_frame(dur);
-            this._max_dur = (max_dur == undefined) ? undefined : parent.to_frame(max_dur);
+            this._dur = dur == undefined ? undefined : parent.to_frame(dur);
+            this._max_dur =
+                max_dur == undefined ? undefined : parent.to_frame(max_dur);
             if (repeat) {
                 this._repeat = repeat;
             }
@@ -94,7 +154,6 @@ export class StepA extends Action {
                     } else {
                         delete e[k];
                     }
-
                 }
             });
             // drop property not present
@@ -115,7 +174,13 @@ export class StepA extends Action {
         };
     }
     resolve(frame: number, base_frame: number, hint_dur: number): void {
-        const { _steps: steps, _kf_map, _dur = hint_dur, _max_dur = hint_dur, _vars } = this;
+        const {
+            _steps: steps,
+            _kf_map,
+            _dur = hint_dur,
+            _max_dur = hint_dur,
+            _vars,
+        } = this;
         if (_kf_map != undefined) {
             if (this._start != frame) {
                 const d = this._end - this._start;
@@ -142,38 +207,30 @@ export class StepA extends Action {
         this._end = frame + t_max;
         this._base_frame = base_frame;
     }
-
+    _prev_frame?: number;
+    _prev_value?: any;
     run(): void {
         const { _start, _vars, _kf_map, _base_frame } = this;
         for (const [name, entries] of Object.entries(_kf_map!)) {
             for (const prop of enum_props(_vars, name)) {
-                let prev_t = _base_frame;
-                let prev_v = undefined;
+                this._prev_frame = _base_frame;
+                this._prev_value = undefined;
                 for (const { t, value, ease } of entries) {
                     const frame = _start + t;
                     let v;
-                    if (value == null) {
-                        v = prop.get_value(_start);
-                    } else if (value === FIRST) {
-                        v = prop.get_value(_start);
-                    } else if (value === LAST) {
-                        if (prev_v == undefined) {
-                            throw new Error(`Unexpected`);
-                        }
-                        v = prev_v;
+
+                    if (value instanceof Stepper) {
+                        v = value.do(this, prop, frame);
                     } else {
                         v = prop.check_value(value);
                     }
-                    prop.key_value(frame, v, prev_t, ease);
-                    prev_t = frame;
-                    prev_v = v;
+                    prop.key_value(frame, v, this._prev_frame, ease);
+                    this._prev_frame = frame;
+                    this._prev_value = v;
                 }
             }
         }
-
     }
-    static last = LAST;
-    static first = FIRST;
 }
 
 function resolve_t(
@@ -237,9 +294,7 @@ function resolve_t(
                     first[n] = null;
                 }
                 entries.push(first);
-
             }
-
         } else {
             if (!(i === 0 && t == 0)) {
                 throw new Error(`Unexpected`);
@@ -364,3 +419,9 @@ export function Step(
 ) {
     return new StepA(steps, vars, params);
 }
+
+Step.add = (value: any) => new Add(value);
+Step.initial = new Inital();
+Step.first = new First();
+Step.prev = new Last();
+// Step.first = FIRST;

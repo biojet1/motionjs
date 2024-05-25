@@ -8,6 +8,13 @@ export class Property<V> extends Animatable<V> {
         this.owner = owner;
         this.name = name;
     }
+
+    update(frame: number = 0) {
+        this.owner[this.name] = this.get_value(frame);
+    }
+    override initial_value() {
+        return this.owner[this.name];
+    }
 }
 
 export class NumericProperty extends Property<number> {

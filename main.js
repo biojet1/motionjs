@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import * as m3 from '3motion';
 import { OrbitControls } from 'three/addons/controls/OrbitControls'
 
-
+const canvas = document.querySelector('#c');
 const W = 544;
 const H = 306;
 const light = new THREE.AmbientLight(0x404040);
@@ -13,9 +13,9 @@ const material2 = new THREE.MeshLambertMaterial({
     flatShading: true,
 });
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
 renderer.setSize(W, H);
-document.body.appendChild(renderer.domElement);
+// document.body.appendChild(renderer.domElement);
 
 
 {
@@ -84,10 +84,10 @@ iro1.repeat_count = 5;
 
 cuber.repeat_count = -1;
 cuber.bounce = true;
-root.update(10000000);
+// root.update(10000000);
 console.log(root.prop_set);
 
-m3.animate2({
+m3.animate({
     fps: 60,
     end: 30 * 60,
     // frames: 5 * 60,

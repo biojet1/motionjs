@@ -5,36 +5,39 @@ import { Track } from "./track/track.js";
 export * from "./keyframe.js";
 export * from "./track/index.js";
 export * from "./properties.js";
+const { floor } = Math;
 
-export function animate(fps: number, start: number, end: number, update: ((frame: number) => void)) {
-
-
-    const mspf = 1000 / fps; // miliseconds per frame
-    const frames = end - start + 1;
-    let frame = start;
-
-    function render(currentTime: DOMHighResTimeStamp) {
-        const t = performance.now();
-        {
-            if (((frame) * mspf) % 1000 == 0) {
-                console.info(`${frame} t=${t} frames=${frames} ${start}-${end}`);
-            }
-        }
-        update(frame);
-        frame = (frame + 1) % frames;
-        const excess = mspf - (performance.now() - t);
-        if (excess > 0) {
-            setTimeout(() => requestAnimationFrame(render), excess);
-        }
-        else {
-            requestAnimationFrame(render);
-        }
+export function formatTime(sec: number) {
+    if (sec === Infinity) {
+        return 'IN:FI:NIT';
     }
-    requestAnimationFrame(render);
-
+    const u = floor(sec * 1000); // miliseconds
+    const [h, a] = [floor(u / (3600 * 1000)), u % (3600 * 1000)];
+    const [m, b] = [floor(a / (60 * 1000)), a % (60 * 1000)];
+    const [s, z] = [floor(b / 1000), b % 1000];
+    return (
+        `${h > 0 ? `${h > 9 ? '' : '0'}${h}:` : ''}` +
+        `${m < 10 ? '0' : ''}${m}:` +
+        `${s < 10 ? '0' : ''}${s}` +
+        `${z <= 0 ? '' : z < 10 ? '.00' + z : z < 100 ? '.0' + z : ('.' + z).replace(/0+$/, '')}`
+    );
 }
 
-export function animate2({ fps, update, start = 0, end = Infinity, frames = Infinity }: { fps: number, start: number, end: number, frames: number, update: ((frame: number) => void) }) {
+export function animate({
+    fps,
+    update,
+    start = 0,
+    end = Infinity,
+    frames = Infinity,
+    loop = true,
+}: {
+    fps: number;
+    start: number;
+    end: number;
+    frames: number;
+    loop: boolean;
+    update: (frame: number) => void;
+}) {
     const mspf = 1000 / fps; // miliseconds per frame
     let frame = start;
     if (frames === Infinity) {
@@ -45,30 +48,37 @@ export function animate2({ fps, update, start = 0, end = Infinity, frames = Infi
     function render(currentTime: DOMHighResTimeStamp) {
         const t = performance.now();
         {
-            if (((frame) * mspf) % 1000 == 0) {
-                console.info(`${frame} t=${t} frames=${frames} ${start}-${end}`);
+            if ((frame * mspf) % 1000 == 0) {
+                console.info(`${frame} t=${formatTime(t)} frames=${frames} ${start}-${end}`);
             }
         }
         update(frame);
 
         if (frames == Infinity) {
-            frame = (frame + 1);
+            frame = frame + 1;
         } else {
-            frame = (frame + 1) % frames;
+            if (frame >= end) {
+                if (loop) {
+                    frame = start;
+                } else {
+                    frame = end - 1;
+                }
+            } else {
+                frame = (frame + 1) % frames;
+            }
         }
-        if (frame >= end) {
-            frame = end - 1;
-        }
+
         const excess = mspf - (performance.now() - t);
         if (excess > 0) {
             setTimeout(() => requestAnimationFrame(render), excess);
-        }
-        else {
+        } else {
             requestAnimationFrame(render);
         }
     }
     requestAnimationFrame(render);
 }
+
+// pause start end
 
 export class Root {
     frame_rate: number = 60;
@@ -87,8 +97,27 @@ export class Root {
     }
     update(frame: number = 0) {
         for (const prop of this.prop_set) {
-            prop.owner[prop.name] = prop.get_value(frame);
+            prop.update(frame);
         }
     }
+    calc_time_range() {
+        let max = 0;
+        let min = 0;
 
+        for (const prop of this.prop_set) {
+            const [S, E] = prop.frame_range();
+            if (Number.isFinite(E)) {
+                if (E > max) {
+                    max = E;
+                }
+            }
+            if (S < min) {
+                min = S;
+            }
+        }
+
+        return [min, max];
+    }
+
+    // throw Error(`Unexpected by '${this.constructor.name}'`);
 }
