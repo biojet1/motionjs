@@ -51,12 +51,10 @@ export class Action implements IAction {
 export abstract class Actions extends Array<Action | Actions> implements IAction {
     _start: number = -Infinity;
     _end: number = -Infinity;
-    // frame_rate = -Infinity;
     _hint_dur?: number;
     _easing?: Iterable<number> | boolean;
     ready(parent: IParent): void {
         this._easing = this._easing ?? parent.easing;
-        // this.frame_rate = parent.frame_rate;
         if (this._hint_dur != undefined) {
             this._hint_dur = parent.to_frame(this._hint_dur);
         }
@@ -201,9 +199,34 @@ export class ToA extends Action {
         };
     }
 }
+export class AddA extends Action {
+    _easing?: Iterable<number> | boolean;
+    constructor(props: IProperty<any>[], value: any, dur?: number) {
+        super();
+        this.ready = function (parent: IParent): void {
+            const { _easing } = this;
+            this._dur = (dur == undefined) ? undefined : parent.to_frame(dur);
+            if (!_easing) {
+                this._easing = parent.easing;
+            }
+            for (const prop of props) {
+                parent.add_prop(prop);
+            }
+        };
+        this.run = function (): void {
+            const { _start, _end, _easing } = this;
+            for (const prop of props) {
+                prop.key_value(_end, value, _start, _easing, true);
+            }
+        };
+    }
+}
 
 export function To(props: IProperty<any>[], value: any, dur: number = 1) {
     return new ToA(props, value, dur);
 }
 
 
+export function Add(props: IProperty<any>[], value: any, dur: number = 1) {
+    return new AddA(props, value, dur);
+}

@@ -1,4 +1,4 @@
-import { IAction, Action, IProperty } from "./action.js";
+import { IAction, Action, IProperty, Actions } from "./action.js";
 import { PropMap, Step, UserEntry } from "./steps.js";
 
 export class Track {
@@ -7,9 +7,6 @@ export class Track {
     hint_dur: number = 60; // 1s * frame_rate
     easing?: Iterable<number> | boolean;
     prop_set?: Set<IProperty<any>>;
-    // sec(n: number) {
-    //     return this.frame_rate * n;
-    // }
     add_prop(prop: IProperty<any>) {
         this.prop_set?.add(prop);
     }
@@ -29,13 +26,13 @@ export class Track {
         let B = this.frame;
         for (const act of args) {
             let D = 0;
-            if (Array.isArray(act)) {
+            if (!Array.isArray(act) || act instanceof Actions) {
+                D = feed(this, act, I, B);
+            } else {
                 for (const a of act) {
                     let d = feed(this, a, I, B);
                     D = Math.max(d, D);
                 }
-            } else {
-                D = feed(this, act, I, B);
             }
             I += D;
         }

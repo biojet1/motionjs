@@ -8,7 +8,7 @@ import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.j
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls'
 import * as m3 from '3motion';
-
+import { To, Seq, Step } from '3motion';
 function main() {
 
     const canvas = document.querySelector('#c');
@@ -134,7 +134,7 @@ function main() {
 
     })();
 
-    {
+    const exct = (() => {
 
         const shape = new THREE.Shape();
         const x = - 2.5;
@@ -156,18 +156,18 @@ function main() {
             bevelSegments: 2,
         };
 
-        addSolidGeometry(- 2, 1, new THREE.ExtrudeGeometry(shape, extrudeSettings));
+        return addSolidGeometry(- 2, 1, new THREE.ExtrudeGeometry(shape, extrudeSettings));
 
-    }
+    })();
 
-    {
+    const icos = (() => {
 
         const radius = 7;
-        addSolidGeometry(- 1, 1, new THREE.IcosahedronGeometry(radius));
+        return addSolidGeometry(- 1, 1, new THREE.IcosahedronGeometry(radius));
 
-    }
+    })();
 
-    {
+    const lath = (() => {
 
         const points = [];
         for (let i = 0; i < 10; ++i) {
@@ -176,16 +176,16 @@ function main() {
 
         }
 
-        addSolidGeometry(0, 1, new THREE.LatheGeometry(points));
+        return addSolidGeometry(0, 1, new THREE.LatheGeometry(points));
 
-    }
+    })();
 
-    {
+    const octa = (() => {
 
         const radius = 7;
-        addSolidGeometry(1, 1, new THREE.OctahedronGeometry(radius));
+        return addSolidGeometry(1, 1, new THREE.OctahedronGeometry(radius));
 
-    }
+    })();
 
     {
 
@@ -529,6 +529,46 @@ function main() {
         ]
         , { wid, ro1, pox: [pox, poz] }
     ));
+    {
+        const { Par, Add } = m3;
+        const tr1 = root.track(0);
+        const r3 = new m3.NumericProperty(octa.rotation, 'y');
+        const r1 = new m3.NumericProperty(icos.rotation, 'y');
+        const r2 = new m3.NumericProperty(lath.rotation, 'x');
+        // tr1.run(To([r1], 2));
+        // tr1.run(To([r2], 2));
+        // tr1.run(To([r3], 2));
+        tr1.run(Seq(
+            To([r3], -3),
+            To([r2], -3),
+            To([r1], -3),
+        ));
+        // console.log(r3.value);
+        // console.log(r2.value);
+        tr1.run(Par(
+            To([r3], 2),
+            To([r2], 2),
+            To([r1], 2),
+        ));
+        tr1.run(Seq(
+            To([r3], 0),
+            To([r2], 0),
+            To([r1], 0),
+        ).delay(0.5));
+
+        tr1.run(Seq(
+            To([r3], 2),
+            To([r2], 2),
+            To([r1], 2),
+        ).stagger(0.5));
+
+        tr1.run(Par(
+            To([r3], 0),
+            To([r2], 0),
+            To([r1], 0),
+        ));
+
+    }
 
 
     wid.repeat_count = -1;

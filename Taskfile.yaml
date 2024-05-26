@@ -9,3 +9,8 @@ tasks:
       - dist/**/*.js
     cmds:
       - npx tsc -d --sourcemap
+
+  tapx:
+    deps: [compile]
+    cmds:
+      - npx tap -t600 --disable-coverage --reporter=terse {{.CLI_ARGS}}

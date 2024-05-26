@@ -1,7 +1,7 @@
 
 ////
 
-import { Keyframes, offset_fun, ratio_at } from "./kfhelper";
+import { Keyframes, offset_fun, ratio_at } from "./kfhelper.js";
 
 export class Animatable<V> {
     value: Keyframes<V> = new Keyframes<V>();
@@ -30,20 +30,20 @@ export class Animatable<V> {
             for (const k of value) {
                 if (frame <= k.time) {
                     if (p) {
-                        if (k.easing === true) {
-                            return p.value;
+                        if (p.easing === true) {
+                            return k.value;
                         }
                         let r = (frame - p.time) / (k.time - p.time);
                         if (r == 0) {
                             return p.value;
                         } else if (r == 1) {
                             return k.value;
-                        } else if (p.easing && p.easing !== true) {
+                        } else if (p.easing) {
                             r = ratio_at(p.easing, r);
                         }
                         return this.lerp_value(r, p.value, k.value);
                     } else if (frame < k.time) {
-                        return this.get_value_off(frame);
+                        return this.get_value_off!(frame);
                         // return k.value;
                     } else {
                         return k.value;
@@ -52,7 +52,7 @@ export class Animatable<V> {
                 p = k;
             }
             if (p) {
-                return this.get_value_off(frame);
+                return this.get_value_off!(frame);
                 // return p.value;
             }
             // return this.initial_value();
@@ -65,7 +65,7 @@ export class Animatable<V> {
         }
     }
     // static
-    get_value_off(frame: number): V {
+    get_value_off?(frame: number): V {
         const { value } = this;
         const first = value.at(0);
         if (first) {
@@ -101,7 +101,7 @@ export class Animatable<V> {
                     // pass
                 } else if (start > last.time) {
                     last.easing = true;
-                    last = kfs.push_value(start, this.get_value(last.time));
+                    last = kfs.push_value(start, last.value);
                 } else {
                     if (start != last.time) {
                         throw new Error(
@@ -109,15 +109,15 @@ export class Animatable<V> {
                         );
                     }
                 }
-            }
-        } else {
-            const v = kfs;
-            kfs = this.value = new Keyframes<V>();
-            if (start != undefined) {
-                if (v != null) {
-                    last = kfs.push_value(start, v);
+            } else {
+                if (start == undefined) {
+                    // pass
+                } else {
+                    last = kfs.push_value(start, this.initial_value());
                 }
             }
+        } else {
+            throw new Error(`unexpected`);
         }
         value = this.check_value(value);
         if (last) {
@@ -128,6 +128,9 @@ export class Animatable<V> {
                 value = this.add_value(last.value, value);
             }
         }
+        delete this['get_value_off'];
+        delete this['_end'];
+        // Object.
         return kfs.push_value(frame, value);
     }
 
@@ -136,7 +139,7 @@ export class Animatable<V> {
             const { _end } = this;
             if (_end == undefined) {
                 try {
-                    this.get_value_off(NaN);
+                    this.get_value_off?.(NaN);
                 } catch (e) {
 
                 }
