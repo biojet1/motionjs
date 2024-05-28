@@ -32,12 +32,14 @@ export class Action implements IAction {
     _start: number = -Infinity;
     _end: number = -Infinity;
     _dur?: number;
+    /* c8 ignore start */
     ready(parent: IParent): void {
         throw new Error("Not implemented");
     }
     run(): void {
         throw new Error("Not implemented");
     }
+    /* c8 ignore stop */
     resolve(frame: number, base_frame: number, hint_dur: number): void {
         const dur = this._dur ?? hint_dur;
         this._start = frame;
@@ -61,30 +63,30 @@ export abstract class Actions extends Array<Action | Actions> implements IAction
     }
     run() {
         for (const act of this) {
+            /* c8 ignore start */
             if (act._start < 0 || act._start > act._end) {
                 throw new Error(`Unexpected _start=${act._start} _end=${act._end}`);
             }
+            /* c8 ignore stop */
             act.run();
         }
     }
     get_active_dur() {
         return this._end - this._start;
     }
-    // to_frame(sec: number) {
-    //     return Math.round(this.frame_rate * sec);
-    // }
     abstract resolve(frame: number, base_frame: number, hint_dur: number): void;
 }
 
 export class SeqA extends Actions {
     _delay?: number;
     _stagger?: number;
-
+    _delay_sec?: number;
+    _stagger_sec?: number;
     ready(parent: IParent): void {
         super.ready(parent);
-        const { _delay, _stagger } = this;
-        _delay && (this._delay = parent.to_frame(_delay));
-        _stagger && (this._stagger = parent.to_frame(_stagger));
+        const { _delay_sec, _stagger_sec } = this;
+        _delay_sec && (this._delay = parent.to_frame(_delay_sec));
+        _stagger_sec && (this._stagger = parent.to_frame(_stagger_sec));
         for (const act of this) {
             act.ready(parent);
         }
@@ -117,11 +119,11 @@ export class SeqA extends Actions {
         this._end = e;
     }
     delay(sec: number) {
-        this._delay = sec;
+        this._delay_sec = sec;
         return this;
     }
     stagger(sec: number) {
-        this._stagger = sec;
+        this._stagger_sec = sec;
         return this;
     }
 }

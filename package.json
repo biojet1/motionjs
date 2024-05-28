@@ -43,5 +43,10 @@
     "vite": "^5.2.11",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4"
+  },
+  "c8": {
+    "reports-dir": "/tmp/m3.c8/rep",
+    "temp-directory": "/tmp/m3.c8/tmp",
+    "src": "dist"
   }
 }

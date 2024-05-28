@@ -6,9 +6,9 @@ export class Track {
     frame_rate: number = 60;
     hint_dur: number = 60; // 1s * frame_rate
     easing?: Iterable<number> | boolean;
-    prop_set?: Set<IProperty<any>>;
+    properties?: Set<IProperty<any>>;
     add_prop(prop: IProperty<any>) {
-        this.prop_set?.add(prop);
+        this.properties?.add(prop);
     }
     to_frame(sec: number) {
         return Math.round(this.frame_rate * sec);
@@ -44,9 +44,11 @@ function feed(track: Track, cur: IAction, frame: number, base_frame: number) {
     cur.ready(track);
     cur.resolve(frame, base_frame, track.hint_dur);
     const d = cur.get_active_dur();
+    /* c8 ignore start */
     if (d < 0) {
         throw new Error(`Unexpected`);
     }
+    /* c8 ignore stop */
     cur.run();
     return d;
 }

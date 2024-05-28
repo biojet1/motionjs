@@ -85,7 +85,7 @@ iro1.repeat_count = 5;
 cuber.repeat_count = -1;
 cuber.bounce = true;
 // root.update(10000000);
-console.log(root.prop_set);
+console.log(root.properties);
 
 m3.animate({
     fps: 60,

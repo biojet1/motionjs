@@ -100,6 +100,9 @@ class Last extends Stepper {
         return _prev_value;
     }
 }
+class Hold extends Stepper {
+}
+
 
 export class StepA extends Action {
     _steps: Array<UserEntry>;
@@ -221,6 +224,9 @@ export class StepA extends Action {
 
                     if (value instanceof Stepper) {
                         v = value.do(this, prop, frame);
+                        if (value instanceof Hold) {
+
+                        }
                     } else {
                         v = prop.check_value(value);
                     }
@@ -423,5 +429,5 @@ export function Step(
 Step.add = (value: any) => new Add(value);
 Step.initial = new Inital();
 Step.first = new First();
-Step.prev = new Last();
+Step.last = new Last();
 // Step.first = FIRST;

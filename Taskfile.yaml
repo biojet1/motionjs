@@ -14,3 +14,15 @@ tasks:
     deps: [compile]
     cmds:
       - npx tap -t600 --disable-coverage --reporter=terse {{.CLI_ARGS}}
+
+  c8test:
+    method: none
+    deps: [compile]
+    cmds:
+      - c8 npx tap -t600 --disable-coverage --reporter=terse 'tests/**/*.tap.*js'
+
+  c8html:
+    method: none
+    deps: [c8test]
+    cmds:
+      - c8 report -r html

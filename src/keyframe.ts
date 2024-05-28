@@ -93,32 +93,33 @@ export class Animatable<V> {
         add?: boolean
     ) {
         let { value: kfs } = this;
-        let last;
-        if (kfs instanceof Keyframes) {
-            last = kfs[kfs.length - 1];
-            if (last) {
-                if (start == undefined) {
-                    // pass
-                } else if (start > last.time) {
-                    last.easing = true;
-                    last = kfs.push_value(start, last.value);
-                } else {
-                    if (start != last.time) {
-                        throw new Error(
-                            `unexpected start=${start} last.time=${last.time} time=${frame} value=${value} by '${this.constructor.name}'`
-                        );
-                    }
-                }
+        /* c8 ignore start */
+        if (!(kfs instanceof Keyframes)) {
+            throw new Error(`unexpected`);
+        }
+        /* c8 ignore stop */
+        let last = kfs.at(-1);
+        if (last) {
+            if (start == undefined) {
+                // pass
+            } else if (start > last.time) {
+                last.easing = true;
+                last = kfs.push_value(start, last.value);
             } else {
-                if (start == undefined) {
-                    // pass
-                } else {
-                    last = kfs.push_value(start, this.initial_value());
+                if (start != last.time) {
+                    throw new Error(
+                        `unexpected start=${start} last.time=${last.time} time=${frame} value=${value} by '${this.constructor.name}'`
+                    );
                 }
             }
         } else {
-            throw new Error(`unexpected`);
+            if (start == undefined) {
+                // pass
+            } else {
+                last = kfs.push_value(start, this.initial_value());
+            }
         }
+
         value = this.check_value(value);
         if (last) {
             if (easing != undefined) {
@@ -130,8 +131,27 @@ export class Animatable<V> {
         }
         delete this['get_value_off'];
         delete this['_end'];
-        // Object.
         return kfs.push_value(frame, value);
+    }
+
+    hold_last_value(frame: number) {
+        let { value: kfs } = this;
+        let last = kfs.at(-1);
+        if (last) {
+            if (frame > last.time) {
+                last.easing = true;
+                last = kfs.push_value(frame, last.value);
+            } else {
+                if (frame != last.time) {
+                    throw new Error(
+                        `unexpected frame=${frame} last.time=${last.time} time=${frame} by '${this.constructor.name}'`
+                    );
+                }
+            }
+        } else {
+            last = kfs.push_value(frame, this.initial_value());
+        }
+        return last;
     }
 
     frame_range(): [number, number] {

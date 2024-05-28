@@ -555,18 +555,18 @@ function main() {
             To([r2], 0),
             To([r1], 0),
         ).delay(0.5));
-
-        tr1.run(Seq(
-            To([r3], 2),
-            To([r2], 2),
-            To([r1], 2),
-        ).stagger(0.5));
-
         tr1.run(Par(
+            To([r3], 3),
+            To([r2], 3),
+            To([r1], 3),
+        ));
+        tr1.run(Seq(
             To([r3], 0),
             To([r2], 0),
             To([r1], 0),
-        ));
+        ).stagger(0.5));
+
+
 
     }
 
@@ -574,7 +574,7 @@ function main() {
     wid.repeat_count = -1;
     wid.bounce = true;
 
-    console.log(root.prop_set);
+    console.log(root.p);
 
     const [start, end] = root.calc_time_range();
     const { frame_rate: fps } = root;

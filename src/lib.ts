@@ -29,12 +29,14 @@ export function animate({
     start = 0,
     end = Infinity,
     frames = Infinity,
+    step = 1,
     loop = true,
 }: {
     fps: number;
     start: number;
     end: number;
     frames: number;
+    step: number;
     loop: boolean;
     update: (frame: number) => void;
 }) {
@@ -55,7 +57,7 @@ export function animate({
         update(frame);
 
         if (frames == Infinity) {
-            frame = frame + 1;
+            frame = frame + step;
         } else {
             if (frame >= end) {
                 if (loop) {
@@ -64,7 +66,7 @@ export function animate({
                     frame = end - 1;
                 }
             } else {
-                frame = (frame + 1) % frames;
+                frame = (frame + step) % frames;
             }
         }
 
@@ -84,7 +86,7 @@ export class Root {
     frame_rate: number = 60;
     hint_dur: number = 60; // 1s * frame_rate
     easing: Iterable<number> | boolean = false;
-    prop_set = new Set<Property<any>>();
+    properties = new Set<Property<any>>();
 
     track(frame: number = 0) {
         const tr = new Track();
@@ -92,11 +94,11 @@ export class Root {
         tr.hint_dur = this.hint_dur;
         tr.easing = this.easing;
         tr.frame = frame;
-        tr.prop_set = this.prop_set;
+        tr.properties = this.properties;
         return tr;
     }
     update(frame: number = 0) {
-        for (const prop of this.prop_set) {
+        for (const prop of this.properties) {
             prop.update(frame);
         }
     }
@@ -104,7 +106,7 @@ export class Root {
         let max = 0;
         let min = 0;
 
-        for (const prop of this.prop_set) {
+        for (const prop of this.properties) {
             const [S, E] = prop.frame_range();
             if (Number.isFinite(E)) {
                 if (E > max) {

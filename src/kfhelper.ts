@@ -34,6 +34,7 @@ export function offset_fun(repeat_count: number = 1, S: number, E: number, bounc
     _active_dur?: number;
     _end?: number;
 }) {
+    // TODO: repeat_dur, easing
     that._start = S;
     if (S < E) {
         if (repeat_count < 0) {
