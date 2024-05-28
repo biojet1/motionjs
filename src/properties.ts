@@ -1,4 +1,4 @@
-import { Animatable } from "./keyframe.js";
+import { Animatable } from "./keyframe/keyframe.js";
 
 export class Property<V> extends Animatable<V> {
     owner: any;

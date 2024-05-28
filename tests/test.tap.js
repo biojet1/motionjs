@@ -136,7 +136,7 @@ test.test("ParE", (t) => {
     t.equal(tr.frame, 4 + 4);
     t.same(cata(a, 0, 10), [1, 1, 1, 1, 1, 2, 3, 4, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6]);
-    t.same(cata(c, 0, 10), [9, 9, 9, 9, 9, 8, 7, 6, 5, 5]);
+    t.same(cata(c, 0, 10), [9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5, 5]);
     t.end();
 });
 
@@ -149,10 +149,10 @@ test.test("Par", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run(Par(Add([a], 4), Add([b], 4, 2), Add([c], -4)));
+    tr.run(Par(Add([a], 4), Add(b, 4, 2), Add([c], -4)));
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6]);
-    t.same(cata(c, 0, 10), [9, 8, 7, 6, 5, 5, 5, 5, 5, 5]);
+    t.same(cata(c, 0, 10), [9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5, 5]);
     t.end();
 });
 
@@ -165,7 +165,7 @@ test.test("run parallel", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run([Add([a], 4), Add([b], 4, 2), Add([c], -4)]);
+    tr.run([Add([a], 4), Add(b, 4, 2), Add([c], -4)]);
     t.equal(tr.frame, 8);
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6]);
@@ -203,21 +203,43 @@ test.test("bounce repeat one", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
+    tr.feed(To(a, 5));
+    t.equal(tr.frame, 4);
+    tr.feed(To(b, 6));
+    t.equal(tr.frame, 8);
+    tr.feed(To(c, 5));
+    t.equal(tr.frame, 12);
+    a.repeat(1, true);
+    t.same(a.frame_range(), [0, 9]);
+    t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 4, 3, 2, 1, 1]);
+    b.repeat(2);
+    t.same(b.frame_range(), [4, 14]);
+    t.same(cata(b, 0, 16), [2, 2, 2, 2, 2, 3, 4, 5, 6, 2, 3, 4, 5, 6, 6, 6]);
+    c.repeat(2, true);
+    t.same(cata(c, 0, 27), [9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 7, 6, 5, 6, 7, 8, 9, 8, 7, 6, 5, 6, 7, 8, 9, 9, 9]);
+    t.same(c.frame_range(), [8, 25]);
+    t.end();
+});
+
+test.test("easing linear", (t) => {
+    const { Track, NumericProperty, Easing, To } = m3;
+    let o = { x: 1, y: 2, z: 9 };
+    let a = new NumericProperty(o, "x");
+    let b = new NumericProperty(o, "y");
+    let c = new NumericProperty(o, "z");
+    let tr = new Track();
+    tr.frame_rate = 4;
+    tr.hint_dur = 4;
+    tr.easing = Easing.linear;
     tr.feed(To([a], 5));
     t.equal(tr.frame, 4);
     tr.feed(To([b], 6));
     t.equal(tr.frame, 8);
     tr.feed(To([c], 5));
     t.equal(tr.frame, 12);
-    a.bounce = true;
-    t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 4, 3, 2, 1, 1]);
-    b.repeat_count = 2;
-    t.same(b.frame_range(), [4, 14]);
-    t.same(cata(b, 0, 16), [2, 2, 2, 2, 2, 3, 4, 5, 6, 2, 3, 4, 5, 6, 6, 6]);
-    c.bounce = true;
-    c.repeat_count = 2;
-    t.same(cata(c, 0, 27), [9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 7, 6, 5, 6, 7, 8, 9, 8, 7, 6, 5, 6, 7, 8, 9, 9, 9]);
-    t.same(c.frame_range(), [8, 25]);
-
+    // console.log(c.value);
+    t.same(cata(a, 0, 10).map(v => Math.round(v * 100)), [100, 200, 300, 400, 500, 500, 500, 500, 500, 500]);
+    t.same(cata(b, 0, 10).map(v => Math.round(v * 100)), [200, 200, 200, 200, 200, 300, 400, 500, 600, 600]);
+    t.same(cata(c, 0, 14).map(v => Math.round(v * 100)), [900, 900, 900, 900, 900, 900, 900, 900, 900, 800, 700, 600, 500, 500]);
     t.end();
 });

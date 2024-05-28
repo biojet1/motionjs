@@ -53,8 +53,7 @@ camera.position.z = 5;
 camZ.key_value(0, 4)
 camZ.key_value(60 * 2, 5)
 camZ.key_value(60 * 3, 3)
-camZ.repeat_count = -1;
-camZ.bounce = true;
+camZ.repeat(-1, true);
 
 const root = new m3.Root();
 
@@ -79,11 +78,10 @@ root.track(0).run(m3.Step(
     , { iro1 }
 ));
 
-iro1.bounce = true;
-iro1.repeat_count = 5;
 
-cuber.repeat_count = -1;
-cuber.bounce = true;
+iro1.repeat(5, true);
+
+cuber.repeat(-1, true);
 // root.update(10000000);
 console.log(root.properties);
 

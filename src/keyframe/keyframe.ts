@@ -5,8 +5,8 @@ import { Keyframes, offset_fun, ratio_at } from "./kfhelper.js";
 
 export class Animatable<V> {
     value: Keyframes<V> = new Keyframes<V>();
-    repeat_count?: number;
-    bounce?: boolean;
+    _repeat_count?: number;
+    _bounce?: boolean;
     _end?: number;
     _start?: number;
     // static
@@ -71,8 +71,8 @@ export class Animatable<V> {
         if (first) {
             const last = value.at(-1);
             if (last) {
-                let { repeat_count, bounce } = this;
-                const fo = offset_fun(repeat_count, first.time, last.time, bounce, this);
+                let { _repeat_count, _bounce } = this;
+                const fo = offset_fun(_repeat_count, first.time, last.time, _bounce, this);
                 const fg = (this.get_value_off = function (frame: number) {
                     return this.get_value(fo(frame));
                 })
@@ -166,11 +166,20 @@ export class Animatable<V> {
             }
         }
         const { _start, _end } = this;
+        /* c8 ignore start */
         if (_end == undefined || _start == undefined) {
             throw Error(`Unexpected by '${this.constructor.name}'`);
         }
-
+        /* c8 ignore stop */
         return [_start, _end];
+    }
+    repeat(count: number = 2, bounce: boolean = false) {
+        this._repeat_count = count;
+        this._bounce = bounce;
+        delete this['get_value_off'];
+        delete this['_end'];
+        // (count < 0 ? count : count+1)
+        return this;
     }
 }
 

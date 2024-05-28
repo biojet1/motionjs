@@ -571,8 +571,7 @@ function main() {
     }
 
 
-    wid.repeat_count = -1;
-    wid.bounce = true;
+    wid.repeat(-1, true);
 
     console.log(root.p);
 

@@ -2,7 +2,7 @@ import { Property } from "./properties.js";
 import { IProperty } from "./track/action.js";
 import { Track } from "./track/track.js";
 
-export * from "./keyframe.js";
+export * from "./keyframe/keyframe.js";
 export * from "./track/index.js";
 export * from "./properties.js";
 const { floor } = Math;

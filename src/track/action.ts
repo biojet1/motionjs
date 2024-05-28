@@ -10,6 +10,7 @@ export interface IProperty<V> {
     check_value(x: any): V;
     add_value(a: V, b: V): V;
     initial_value(): V;
+    hold_last_value(frame: number): any;
 }
 
 export interface IAction {
@@ -41,9 +42,12 @@ export class Action implements IAction {
     }
     /* c8 ignore stop */
     resolve(frame: number, base_frame: number, hint_dur: number): void {
-        const dur = this._dur ?? hint_dur;
+        let { _dur } = this;
+        if (_dur == undefined) {
+            _dur = this._dur = hint_dur;
+        }
         this._start = frame;
-        this._end = frame + dur;
+        this._end = frame + _dur;
     }
     get_active_dur() {
         return this._end - this._start;
@@ -161,9 +165,11 @@ export class ParA extends Actions {
                 if (act._end != end) {
                     act.resolve(end - act.get_active_dur(), base_frame, _hint_dur);
                 }
+                /* c8 ignore start */
                 if (act._end != end) {
                     throw new Error(`Unexpected act._end=${act._end} end=${end}`);
                 }
+                /* c8 ignore stop */
             }
         }
         this._start = frame;
@@ -194,9 +200,9 @@ export class ToA extends Action {
             }
         };
         this.run = function (): void {
-            const { _start, _end } = this;
+            const { _start, _end, _easing } = this;
             for (const prop of props) {
-                prop.key_value(_end, value, _start);
+                prop.key_value(_end, value, _start, _easing);
             }
         };
     }
@@ -224,11 +230,19 @@ export class AddA extends Action {
     }
 }
 
-export function To(props: IProperty<any>[], value: any, dur: number = 1) {
-    return new ToA(props, value, dur);
+function list_props(x: IProperty<any>[] | IProperty<any>) {
+    if (Array.isArray(x)) {
+        return x;
+    } else {
+        return [x];
+    }
+}
+
+export function To(props: IProperty<any>[] | IProperty<any>, value: any, dur?: number) {
+    return new ToA(list_props(props), value, dur);
 }
 
 
-export function Add(props: IProperty<any>[], value: any, dur: number = 1) {
-    return new AddA(props, value, dur);
+export function Add(props: IProperty<any>[] | IProperty<any>, value: any, dur?: number) {
+    return new AddA(list_props(props), value, dur);
 }

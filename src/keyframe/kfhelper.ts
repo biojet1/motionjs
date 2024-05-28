@@ -18,7 +18,7 @@ export class Keyframes<V> extends Array<KeyframeEntry<V>> {
             }
         }
         const kf = { time, value };
-        this.push({ time, value });
+        this.push(kf);
         return kf;
     }
 }
