@@ -132,7 +132,7 @@ export class StepA extends Action {
             if (bounce) {
                 this._bounce = bounce;
             }
-            easing = this._easing ?? easing;
+            easing = this._easing ?? easing ?? parent.easing;
 
             // collect names, parse inputs
             const names: Array<string> = [];
@@ -264,15 +264,17 @@ function resolve_t(
                     e.t = prev.t + hint_dur;
                 }
             } else if (i > 0) {
-                if (!(dur >= 0)) {
+                if (dur >= 0) {
+                    e.t = dur + steps[i - 1].t!;
+                } else {
                     throw new Error(`Unexpected`);
                 }
-                e.t = dur + steps[i - 1].t!;
             } else {
-                if (!(i === 0 || dur >= 0)) {
+                if (i === 0 || dur >= 0) {
+                    e.t = dur;
+                } else {
                     throw new Error(`Unexpected`);
                 }
-                e.t = dur;
             }
         }
         if (e.t < 0) {
@@ -297,7 +299,7 @@ function resolve_t(
                 // first item is not t=0
                 const first: Entry = { t: 0 };
                 for (const [n, _] of Object.entries(vars)) {
-                    first[n] = null;
+                    first[n] = Step.first;
                 }
                 entries.push(first);
             }
@@ -311,7 +313,7 @@ function resolve_t(
                         throw new Error(`Unexpected`);
                     }
                 } else {
-                    e[k] = null;
+                    e[k] = Step.first;
                 }
             }
         }
@@ -331,20 +333,35 @@ function resolve_bounce(steps: Array<Entry>): Array<Entry> {
     for (const { t, ease, ...vars } of steps) {
         if (t < t_max) {
             const e: Entry = { ...vars, t: t_max + (t_max - t) };
-            if (ease != undefined) {
-                if (ease && ease !== true) {
-                    const [ox, oy, ix, iy] = ease;
-                    e.ease = [1 - ix, 1 - iy, 1 - ox, 1 - oy];
-                } else {
-                    e.ease = ease;
-                }
-            }
+            // if (ease != undefined) {
+            //     if (ease && ease !== true) {
+            //         const [ox, oy, ix, iy] = ease;
+            //         e.ease = [1 - ix, 1 - iy, 1 - ox, 1 - oy];
+            //     } else {
+            //         e.ease = ease;
+            //     }
+            // }
             extra.push(e);
         } else {
             if (t != t_max) {
                 throw new Error(`e.t=${t}, t_max=${t_max}`);
             }
         }
+    }
+    let n = extra.length;
+    let j = 0;
+    while (n-- > 0) {
+        const e = extra[n];
+        const s = steps[j++];
+        if (s.ease != undefined) {
+            if (s.ease && s.ease !== true) {
+                const [ox, oy, ix, iy] = s.ease;
+                e.ease = [1 - ix, 1 - iy, 1 - ox, 1 - oy];
+            } else {
+                e.ease = s.ease;
+            }
+        }
+
     }
     return steps.concat(extra);
 }
@@ -399,7 +416,7 @@ function map_keyframes(steps: Array<Entry>): KFMap {
             })
             .sort((a, b) => a.t - b.t);
         if (x[0].t != 0) {
-            console.log(name, entries);
+            // console.log(name, entries);
             throw new Error(`No t=0 t:${x[0].t} t:${x[0].value}`);
         }
         kf_map[name] = x;

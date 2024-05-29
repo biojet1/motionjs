@@ -1,18 +1,8 @@
 "uses strict";
 import test from "tap";
 import * as m3 from "3motion";
+import { cata, catg } from "./utils.js";
 
-function* getr(p, start, end) {
-    for (let i = start; i < end; ++i) {
-        yield p.get_value(i);
-    }
-}
-function cata(p, start, end) {
-    return [...getr(p, start, end)];
-}
-function catg(p, start, end) {
-    return cata(p, start, end).join(":");
-}
 test.test("Seq then Par", (t) => {
     const { Seq, Par, Track, To, NumericProperty } = m3;
     let o = { x: 1, y: 2, z: 3 };
@@ -218,6 +208,10 @@ test.test("bounce repeat one", (t) => {
     c.repeat(2, true);
     t.same(cata(c, 0, 27), [9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 7, 6, 5, 6, 7, 8, 9, 8, 7, 6, 5, 6, 7, 8, 9, 9, 9]);
     t.same(c.frame_range(), [8, 25]);
+    a.repeat(-1);
+    t.same(cata(a, 0, 20), [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5]);
+    a.repeat(-1, true);
+    t.same(cata(a, 0, 24), [1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 3, 4, 5, 4, 3, 2]);
     t.end();
 });
 

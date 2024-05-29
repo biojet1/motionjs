@@ -55,8 +55,9 @@ export class Animatable<V> {
                 return this.get_value_off!(frame);
                 // return p.value;
             }
-            // return this.initial_value();
-            throw new Error(`empty keyframe list`);
+            const last = value.push_value(frame, this.initial_value());
+            return last.value;
+            // throw new Error(`empty keyframe list`);
         } else {
             if (value == null) {
                 throw new Error(`value cant be null`);
