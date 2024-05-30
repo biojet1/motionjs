@@ -333,14 +333,6 @@ function resolve_bounce(steps: Array<Entry>): Array<Entry> {
     for (const { t, ease, ...vars } of steps) {
         if (t < t_max) {
             const e: Entry = { ...vars, t: t_max + (t_max - t) };
-            // if (ease != undefined) {
-            //     if (ease && ease !== true) {
-            //         const [ox, oy, ix, iy] = ease;
-            //         e.ease = [1 - ix, 1 - iy, 1 - ox, 1 - oy];
-            //     } else {
-            //         e.ease = ease;
-            //     }
-            // }
             extra.push(e);
         } else {
             if (t != t_max) {
@@ -348,20 +340,17 @@ function resolve_bounce(steps: Array<Entry>): Array<Entry> {
             }
         }
     }
-    let n = extra.length;
-    let j = 0;
-    while (n-- > 0) {
+    for (let n = extra.length, j = 0; n-- > 0;) {
         const e = extra[n];
-        const s = steps[j++];
-        if (s.ease != undefined) {
-            if (s.ease && s.ease !== true) {
-                const [ox, oy, ix, iy] = s.ease;
+        const { ease } = steps[j++];
+        if (ease != undefined) {
+            if (ease && ease !== true) {
+                const [ox, oy, ix, iy] = ease;
                 e.ease = [1 - ix, 1 - iy, 1 - ox, 1 - oy];
             } else {
-                e.ease = s.ease;
+                e.ease = ease;
             }
         }
-
     }
     return steps.concat(extra);
 }

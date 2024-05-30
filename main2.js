@@ -9,13 +9,10 @@ import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls'
 import * as m3 from '3motion';
 import { To, Seq, Step } from '3motion';
-function main() {
 
-    const canvas = document.querySelector('#c');
-    const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
-
+function main(renderer) {
     const fov = 40;
-    const aspect = 640 / 360; // the canvas default
+    const aspect = 640 / 360; // 
     const near = 0.1;
     const far = 1000;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -23,9 +20,7 @@ function main() {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xAAAAAA);
-    {
-        renderer.setSize(640, 360);
-    }
+
     {
 
         const color = 0xFFFFFF;
@@ -434,61 +429,14 @@ function main() {
 
     }
 
-    function resizeRendererToDisplaySize(renderer) {
-
-        const canvas = renderer.domElement;
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
-        const needResize = canvas.width !== width || canvas.height !== height;
-        if (needResize) {
-
-            renderer.setSize(width, height, false);
-
-        }
-
-        return needResize;
-
-    }
-    {
-        let controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.enablePan = false;
-    }
 
 
 
-    // function render(time) {
-
-    //     time *= 0.001;
-
-    //     if (resizeRendererToDisplaySize(renderer)) {
-
-    //         const canvas = renderer.domElement;
-    //         camera.aspect = canvas.clientWidth / canvas.clientHeight;
-    //         camera.updateProjectionMatrix();
-
-    //     }
-
-    //     objects.forEach((obj, ndx) => {
-
-    //         const speed = .1 + ndx * .05;
-    //         const rot = time * speed;
-    //         obj.rotation.x = rot;
-    //         obj.rotation.y = rot;
-
-    //     });
-
-    //     renderer.render(scene, camera);
-
-    //     requestAnimationFrame(render);
-
-    // }
-    // renderer.render(scene, camera);
     const root = new m3.Root();
     const iro1 = new m3.ColorProperty(cone.material, 'color');
     const sbg = new m3.ColorProperty(scene, 'background');
 
-    // requestAnimationFrame(render);
+
     root.track(0).run(m3.Step(
         [
             { t: 0, iro1: 'white' },
@@ -565,16 +513,23 @@ function main() {
             To([r2], 0),
             To([r1], 0),
         ).stagger(0.5));
-
-
-
     }
-
-
     wid.repeat(-1, true);
+    return [root, scene, camera];
+}
 
-    console.log(root.p);
-
+function web() {
+    const canvas = document.querySelector('#c');
+    const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+    {
+        renderer.setSize(640, 360);
+    }
+    const [root, scene, camera] = main(renderer);
+    {
+        let controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.enablePan = false;
+    }
     const [start, end] = root.calc_time_range();
     const { frame_rate: fps } = root;
     globalThis.cam = camera;
@@ -594,6 +549,7 @@ function main() {
             renderer.render(scene, camera);
         }
     });
+
 }
 
-main();
+web();

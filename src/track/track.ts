@@ -38,6 +38,19 @@ export class Track {
         }
         this.frame = I;
     }
+    track() {
+        const tr = new Track();
+        tr.frame_rate = this.frame_rate;
+        tr.hint_dur = this.hint_dur;
+        tr.easing = this.easing;
+        tr.frame = this.frame;
+        tr.properties = this.properties;
+        return tr;
+    }
+    pass(sec: number) {
+        this.frame += this.to_frame(sec);
+        return this;
+    }
 }
 
 function feed(track: Track, cur: IAction, frame: number, base_frame: number) {

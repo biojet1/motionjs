@@ -28,7 +28,7 @@ export function ratio_at(a: Iterable<number>, t: number) {
     return cubic_bezier_y_of_x([0, 0], [ox, oy], [ix, iy], [1, 1])(t);
 }
 
-export function offset_fun(repeat_count: number = 1, S: number, E: number, bounce: boolean = false, that: {
+export function offset_fun(S: number, E: number, repeat_count: number = 1, bounce: boolean = false, that: {
     _iter_dur?: number;
     _start?: number;
     _active_dur?: number;
@@ -79,6 +79,6 @@ export function offset_fun(repeat_count: number = 1, S: number, E: number, bounc
             return S;
         }
     } else {
-        throw Error(`Unexpected`);
+        throw Error(`Unexpected S(${S}) E(${E})`);
     }
 }

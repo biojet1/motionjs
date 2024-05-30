@@ -1,15 +1,13 @@
-
-////
-
 import { Keyframes, offset_fun, ratio_at } from "./kfhelper.js";
 
 export class Animatable<V> {
-    value: Keyframes<V> = new Keyframes<V>();
+    kfs: Keyframes<V> = new Keyframes<V>();
     _repeat_count?: number;
     _bounce?: boolean;
     _end?: number;
     _start?: number;
     // static
+    /* c8 ignore start */
     lerp_value(ratio: number, a: V, b: V): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
     }
@@ -19,15 +17,16 @@ export class Animatable<V> {
     initial_value(): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
     }
+    /* c8 ignore stop */
     check_value(x: any): V {
         return x as V;
     }
     // get_frame_value
     get_value(frame: number): V {
-        const { value } = this;
-        if (value instanceof Keyframes) {
+        const { kfs } = this;
+        if (kfs instanceof Keyframes) {
             let p = undefined; // previous KeyframeEntry<V>
-            for (const k of value) {
+            for (const k of kfs) {
                 if (frame <= k.time) {
                     if (p) {
                         if (p.easing === true) {
@@ -55,25 +54,23 @@ export class Animatable<V> {
                 return this.get_value_off!(frame);
                 // return p.value;
             }
-            const last = value.push_value(frame, this.initial_value());
+            const last = kfs.push_value(frame, this.initial_value());
             return last.value;
             // throw new Error(`empty keyframe list`);
-        } else {
-            if (value == null) {
-                throw new Error(`value cant be null`);
-            }
-            return value;
         }
+        /* c8 ignore start */
+        throw new Error(`unexpected`);
+        /* c8 ignore stop */
     }
     // static
     get_value_off?(frame: number): V {
-        const { value } = this;
-        const first = value.at(0);
+        const { kfs } = this;
+        const first = kfs.at(0);
         if (first) {
-            const last = value.at(-1);
+            const last = kfs.at(-1);
             if (last) {
                 let { _repeat_count, _bounce } = this;
-                const fo = offset_fun(_repeat_count, first.time, last.time, _bounce, this);
+                const fo = offset_fun(first.time, last.time, _repeat_count, _bounce, this);
                 const fg = (this.get_value_off = function (frame: number) {
                     return this.get_value(fo(frame));
                 })
@@ -84,7 +81,9 @@ export class Animatable<V> {
                 }
             }
         }
+        /* c8 ignore start */
         throw Error(`Unexpected by '${this.constructor.name}'`);
+        /* c8 ignore stop */
     }
     key_value(
         frame: number,
@@ -93,7 +92,7 @@ export class Animatable<V> {
         easing?: Iterable<number> | boolean,
         add?: boolean
     ) {
-        let { value: kfs } = this;
+        const { kfs } = this;
         /* c8 ignore start */
         if (!(kfs instanceof Keyframes)) {
             throw new Error(`unexpected`);
@@ -136,7 +135,7 @@ export class Animatable<V> {
     }
 
     hold_last_value(frame: number) {
-        let { value: kfs } = this;
+        const { kfs } = this;
         let last = kfs.at(-1);
         if (last) {
             if (frame > last.time) {
@@ -179,7 +178,6 @@ export class Animatable<V> {
         this._bounce = bounce;
         delete this['get_value_off'];
         delete this['_end'];
-        // (count < 0 ? count : count+1)
         return this;
     }
 }

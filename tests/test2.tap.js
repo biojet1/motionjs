@@ -1,7 +1,7 @@
 "uses strict";
 import test from "tap";
 import * as m3 from "3motion";
-import { ratio_at } from "../dist/keyframe/kfhelper.js";
+import { ratio_at, offset_fun } from "../dist/keyframe/kfhelper.js";
 import { cata } from "./utils.js";
 
 test.test("Easing should be symetrical", (t) => {
@@ -40,6 +40,43 @@ test.test("Easing", (t) => {
         [0, 4039, 7030, 9074, 10302, 10874, 10966, 10758, 10425, 10126, 10000]
     );
 
+    t.end();
+});
+
+test.test("Step", (t) => {
+    const { Track, NumericProperty, Step } = m3;
+    let o = { x: 1, y: 2, z: 10 };
+    let a = new NumericProperty(o, "x");
+    let b = new NumericProperty(o, "y");
+    let c = new NumericProperty(o, "z");
+    let tr = new Track();
+
+    tr.frame_rate = 4;
+    tr.hint_dur = 4;
+
+    tr.step([{ t: 0, a: 10 }, { a: 6 }], { a, b, c });
+
+    t.equal(tr.frame, 4);
+    t.same(cata(a, 0, 10), [10, 9, 8, 7, 6, 6, 6, 6, 6, 6]);
+
+    tr.step([{ t: 0, q: Step.initial }, { q: 6 }], { q: [b, c] });
+
+    t.equal(tr.frame, 8);
+    t.same(cata(b, 0, 12), [2, 2, 2, 2, 2, 3, 4, 5, 6, 6, 6, 6]);
+    t.same(cata(c, 0, 12), [10, 10, 10, 10, 10, 9, 8, 7, 6, 6, 6, 6]);
+
+    tr.step([{ t: 0, a: Step.first }, { a: 2 }], { a });
+    t.equal(tr.frame, 12);
+    t.same(cata(a, 0, 13), [10, 9, 8, 7, 6, 6, 6, 6, 6, 5, 4, 3, 2]);
+    tr.step(
+        [
+            { t: 0, b: Step.first },
+            { dur: 0.5, b: 4 },
+        ],
+        { b }
+    );
+    t.equal(tr.frame, 14);
+    t.same(cata(b, 0, 15), [2, 2, 2, 2, 2, 3, 4, 5, 6, 6, 6, 6, 6, 5, 4]);
     t.end();
 });
 
@@ -212,9 +249,27 @@ test.test("Step Easing bounce", (t) => {
     //     cata(a, 0, 21).map((v) => Math.round(v)),
     //     [0, 4039, 7030, 9074, 10302, 10874, 10966, 10758, 10425, 10126, 10000, 10126, 10425, 10758, 10966, 10874, 10302, 9074, 7030, 4039, 0]
     // );
+
+    t.equal(a.get_value(0), 0);
     t.same(tr.frame, (10 + 10) * 2);
     t.same(a.get_value(0), a.get_value(40));
     // console.log(a.value);
     // console.log(cata(a, 0, 51).map((v) => Math.round(v)));
+    t.end();
+});
+
+test.test("offset_fun", (t) => {
+    const o = {}
+    let off = offset_fun(4, 4, 3, false, o);
+    t.same([off(3), off(4), off(5)], [4, 4, 4]);
+    t.same([o._start, o._end], [4, 4]);
+    t.throws(() => {
+        offset_fun(5, 4, 3, false, o);
+    });
+    t.throws(() => {
+        offset_fun(3, 4, 0, false, o);
+    });
+    off = offset_fun(4, 7, 1, false, o);
+    t.same([off(1), off(2), off(3), off(4), off(5), off(6), off(7), off(8), off(9)], [4, 4, 4, 4, 5, 6, 7, 7, 7]);
     t.end();
 });

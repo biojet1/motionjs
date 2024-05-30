@@ -31,6 +31,8 @@
     "clean": "rm -r dist/*"
   },
   "dependencies": {
+    "canvas": "^2.11.2",
+    "gl": "^8.0.2",
     "puppeteer": "^22.9.0",
     "tap": "^18.8.0",
     "three": "^0.164.1",

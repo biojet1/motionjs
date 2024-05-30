@@ -59,6 +59,10 @@ export abstract class Actions extends Array<Action | Actions> implements IAction
     _end: number = -Infinity;
     _hint_dur?: number;
     _easing?: Iterable<number> | boolean;
+    _params: {
+        easing?: Iterable<number> | boolean;
+        hint_dur?: number;
+    } = {};
     ready(parent: IParent): void {
         this._easing = this._easing ?? parent.easing;
         if (this._hint_dur != undefined) {
@@ -86,6 +90,9 @@ export class SeqA extends Actions {
     _stagger?: number;
     _delay_sec?: number;
     _stagger_sec?: number;
+
+    _params: Actions['_params'] & { delay?: number; stagger?: number } = {};
+
     ready(parent: IParent): void {
         super.ready(parent);
         const { _delay_sec, _stagger_sec } = this;
@@ -128,6 +135,10 @@ export class SeqA extends Actions {
     }
     stagger(sec: number) {
         this._stagger_sec = sec;
+        return this;
+    }
+    params(x: this['params']) {
+        this._params = x;
         return this;
     }
 }
@@ -176,15 +187,18 @@ export class ParA extends Actions {
         this._end = end;
     }
 }
+
 export function Par(...items: Array<Action | Actions>) {
     const x = new ParA(...items);
     return x;
 }
+
 export function ParE(...items: Array<Action | Actions>) {
     const x = new ParA(...items);
     x._tail = true;
     return x;
 }
+
 export class ToA extends Action {
     _easing?: Iterable<number> | boolean;
     constructor(props: IProperty<any>[], value: any, dur?: number) {
@@ -207,6 +221,17 @@ export class ToA extends Action {
         };
     }
 }
+
+export class PassA extends Action {
+    constructor(dur?: number) {
+        super();
+        this.ready = function (parent: IParent): void {
+            this._dur = (dur == undefined) ? undefined : parent.to_frame(dur);
+            this.run = function (): void { };
+        };
+    }
+}
+
 export class AddA extends Action {
     _easing?: Iterable<number> | boolean;
     constructor(props: IProperty<any>[], value: any, dur?: number) {
@@ -242,7 +267,10 @@ export function To(props: IProperty<any>[] | IProperty<any>, value: any, dur?: n
     return new ToA(list_props(props), value, dur);
 }
 
-
 export function Add(props: IProperty<any>[] | IProperty<any>, value: any, dur?: number) {
     return new AddA(list_props(props), value, dur);
+}
+
+export function Pass(dur?: number) {
+    return new PassA(dur);
 }

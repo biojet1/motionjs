@@ -42,43 +42,6 @@ test.test("Seq then Par", (t) => {
     t.end();
 });
 
-test.test("Step", (t) => {
-    const { Track, NumericProperty, Step } = m3;
-    let o = { x: 1, y: 2, z: 10 };
-    let a = new NumericProperty(o, "x");
-    let b = new NumericProperty(o, "y");
-    let c = new NumericProperty(o, "z");
-    let tr = new Track();
-
-    tr.frame_rate = 4;
-    tr.hint_dur = 4;
-
-    tr.step([{ t: 0, a: 10 }, { a: 6 }], { a, b, c });
-
-    t.equal(tr.frame, 4);
-    t.same(cata(a, 0, 10), [10, 9, 8, 7, 6, 6, 6, 6, 6, 6]);
-
-    tr.step([{ t: 0, q: Step.initial }, { q: 6 }], { q: [b, c] });
-
-    t.equal(tr.frame, 8);
-    t.same(cata(b, 0, 12), [2, 2, 2, 2, 2, 3, 4, 5, 6, 6, 6, 6]);
-    t.same(cata(c, 0, 12), [10, 10, 10, 10, 10, 9, 8, 7, 6, 6, 6, 6]);
-
-    tr.step([{ t: 0, a: Step.first }, { a: 2 }], { a });
-    t.equal(tr.frame, 12);
-    t.same(cata(a, 0, 13), [10, 9, 8, 7, 6, 6, 6, 6, 6, 5, 4, 3, 2]);
-    tr.step(
-        [
-            { t: 0, b: Step.first },
-            { dur: 0.5, b: 4 },
-        ],
-        { b }
-    );
-    t.equal(tr.frame, 14);
-    t.same(cata(b, 0, 15), [2, 2, 2, 2, 2, 3, 4, 5, 6, 6, 6, 6, 6, 5, 4]);
-    t.end();
-});
-
 test.test("Seq stagger", (t) => {
     const { Track, NumericProperty, Seq, To } = m3;
     let o = { x: 1, y: 2, z: 9 };
@@ -94,6 +57,7 @@ test.test("Seq stagger", (t) => {
     t.same(cata(c, 0, 10), [9, 9, 9, 8, 7, 6, 5, 5, 5, 5]);
     t.end();
 });
+
 test.test("Seq delay", (t) => {
     const { Track, NumericProperty, Seq, Add } = m3;
     let o = { x: 1, y: 2, z: 9 };
@@ -147,7 +111,7 @@ test.test("Par", (t) => {
 });
 
 test.test("run parallel", (t) => {
-    const { Track, NumericProperty, Par, Add } = m3;
+    const { Track, NumericProperty, Add } = m3;
     let o = { x: 1, y: 2, z: 9 };
     let a = new NumericProperty(o, "x");
     let b = new NumericProperty(o, "y");
@@ -164,7 +128,7 @@ test.test("run parallel", (t) => {
 });
 
 test.test("feed one", (t) => {
-    const { Track, NumericProperty, Seq, To } = m3;
+    const { Track, NumericProperty, To } = m3;
     let o = { x: 1, y: 2, z: 9 };
     let a = new NumericProperty(o, "x");
     let b = new NumericProperty(o, "y");
@@ -184,8 +148,44 @@ test.test("feed one", (t) => {
     t.end();
 });
 
+test.test("Pass", (t) => {
+    const { Track, NumericProperty, Pass, To } = m3;
+    let o = { x: 1, y: 2, z: 9 };
+    let a = new NumericProperty(o, "x");
+    let c = new NumericProperty(o, "z");
+    let tr = new Track();
+    tr.frame_rate = 4;
+    tr.hint_dur = 4;
+    tr.run(To([a], 5));
+    t.equal(tr.frame, 4);
+    tr.run(Pass(1));
+    t.equal(tr.frame, 8);
+    tr.run(To([c], 5));
+    t.equal(tr.frame, 12);
+    t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
+    t.same(cata(c, 0, 14), [9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 7, 6, 5, 5]);
+    t.end();
+});
+
+test.test("Pass 2", (t) => {
+    const { Track, NumericProperty, Pass, To } = m3;
+    let o = { x: 1, y: 2, z: 9 };
+    let c = new NumericProperty(o, "z");
+    let tr = new Track();
+    tr.frame_rate = 4;
+    tr.hint_dur = 4;
+    tr.run(Pass());
+    t.equal(tr.frame, 4);
+    tr.run(Pass(1));
+    t.equal(tr.frame, 8);
+    tr.run(To([c], 5));
+    t.equal(tr.frame, 12);
+    t.same(cata(c, 0, 14), [9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 7, 6, 5, 5]);
+    t.end();
+});
+
 test.test("bounce repeat one", (t) => {
-    const { Track, NumericProperty, Seq, To } = m3;
+    const { Track, NumericProperty, To } = m3;
     let o = { x: 1, y: 2, z: 9 };
     let a = new NumericProperty(o, "x");
     let b = new NumericProperty(o, "y");
@@ -235,5 +235,23 @@ test.test("easing linear", (t) => {
     t.same(cata(a, 0, 10).map(v => Math.round(v * 100)), [100, 200, 300, 400, 500, 500, 500, 500, 500, 500]);
     t.same(cata(b, 0, 10).map(v => Math.round(v * 100)), [200, 200, 200, 200, 200, 300, 400, 500, 600, 600]);
     t.same(cata(c, 0, 14).map(v => Math.round(v * 100)), [900, 900, 900, 900, 900, 900, 900, 900, 900, 800, 700, 600, 500, 500]);
+    t.end();
+});
+
+test.test("key_value incresing", (t) => {
+    const { NumericProperty } = m3;
+    let a = new NumericProperty({ x: 5 }, "x");
+    a.key_value(0, 6);
+    a.key_value(1, 5);
+    t.throws(() => {
+        a.key_value(0, 8);
+    });
+    a.key_value(2, 4, 1);
+    t.throws(() => {
+        a.key_value(3, 4, 1);
+    });
+    t.same(cata(a, 0, 3), [6, 5, 4]);
+    a.hold_last_value(7);
+    t.same(cata(a, 0, 7), [6, 5, 4, 4, 4, 4, 4]);
     t.end();
 });
