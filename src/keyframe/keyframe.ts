@@ -165,16 +165,15 @@ export class Animated<V> {
     }
 
     frame_range(): [number, number] {
-        {
-            const { _end } = this;
-            if (_end == undefined) {
-                try {
-                    this.get_value_off?.(NaN);
-                } catch (e) {
 
-                }
+        if (this._end == undefined) {
+            try {
+                this.get_value_off?.(NaN);
+            } catch (e) {
+
             }
         }
+
         const { _start, _end } = this;
         /* c8 ignore start */
         if (_end == undefined || _start == undefined) {
