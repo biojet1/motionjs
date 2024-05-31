@@ -1,6 +1,6 @@
-import { Animatable } from "./keyframe/keyframe.js";
+import { Animated } from "./keyframe/keyframe.js";
 
-export class Property<V> extends Animatable<V> {
+export class Property<V> extends Animated<V> {
     owner: any;
     name: string;
     constructor(owner: any, name: string) {

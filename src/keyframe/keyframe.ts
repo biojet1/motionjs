@@ -1,6 +1,6 @@
 import { Keyframes, offset_fun, ratio_at } from "./kfhelper.js";
 
-export class Animatable<V> {
+export class Animated<V> {
     kfs: Keyframes<V> = new Keyframes<V>();
     _repeat_count?: number;
     _bounce?: boolean;
@@ -8,10 +8,20 @@ export class Animatable<V> {
     _start?: number;
     // static
     /* c8 ignore start */
+    // should be static
     lerp_value(ratio: number, a: V, b: V): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
     }
+    // should be static
     add_value(a: V, b: V): V {
+        throw Error(`Not implemented by '${this.constructor.name}'`);
+    }
+    // should be static
+    value_to_json(_a: V | null): any {
+        throw Error(`Not implemented by '${this.constructor.name}'`);
+    }
+    // should be static
+    value_from_json(_a: any): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
     }
     initial_value(): V {
@@ -181,4 +191,3 @@ export class Animatable<V> {
         return this;
     }
 }
-
