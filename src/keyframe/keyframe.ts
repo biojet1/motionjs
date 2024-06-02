@@ -1,7 +1,7 @@
-import { Keyframes, offset_fun, ratio_at } from "./kfhelper.js";
+import { KeyframeEntry, iter_frame_fun, push_kfe, ratio_at } from "./kfhelper.js";
 
 export class Animated<V> {
-    kfs: Keyframes<V> = new Keyframes<V>();
+    kfs: Array<KeyframeEntry<V>> = [];
     _repeat_count?: number;
     _bounce?: boolean;
     _end?: number;
@@ -34,43 +34,35 @@ export class Animated<V> {
     // get_frame_value
     get_value(frame: number): V {
         const { kfs } = this;
-        if (kfs instanceof Keyframes) {
-            let p = undefined; // previous KeyframeEntry<V>
-            for (const k of kfs) {
-                if (frame <= k.time) {
-                    if (p) {
-                        if (p.easing === true) {
-                            return k.value;
-                        }
-                        let r = (frame - p.time) / (k.time - p.time);
-                        if (r == 0) {
-                            return p.value;
-                        } else if (r == 1) {
-                            return k.value;
-                        } else if (p.easing) {
-                            r = ratio_at(p.easing, r);
-                        }
-                        return this.lerp_value(r, p.value, k.value);
-                    } else if (frame < k.time) {
-                        return this.get_value_off!(frame);
-                        // return k.value;
-                    } else {
+
+        let p = undefined; // previous KeyframeEntry<V>
+        for (const k of kfs) {
+            if (frame <= k.time) {
+                if (p) {
+                    if (p.easing === true) {
                         return k.value;
                     }
+                    let r = (frame - p.time) / (k.time - p.time);
+                    if (r == 0) {
+                        return p.value;
+                    } else if (r == 1) {
+                        return k.value;
+                    } else if (p.easing) {
+                        r = ratio_at(p.easing, r);
+                    }
+                    return this.lerp_value(r, p.value, k.value);
+                    // } else if (frame < k.time) {
+                    //     return this.get_value_off!(frame);
+                } else {
+                    return k.value;
                 }
-                p = k;
             }
-            if (p) {
-                return this.get_value_off!(frame);
-                // return p.value;
-            }
-            const last = kfs.push_value(frame, this.initial_value());
-            return last.value;
-            // throw new Error(`empty keyframe list`);
+            p = k;
         }
-        /* c8 ignore start */
-        throw new Error(`unexpected`);
-        /* c8 ignore stop */
+        if (p) {
+            return this.get_value_off!(frame);
+        }
+        return this.initial_value()
     }
     // static
     get_value_off?(frame: number): V {
@@ -80,7 +72,7 @@ export class Animated<V> {
             const last = kfs.at(-1);
             if (last) {
                 let { _repeat_count, _bounce } = this;
-                const fo = offset_fun(first.time, last.time, _repeat_count, _bounce, this);
+                const fo = iter_frame_fun(first.time, last.time, _repeat_count, _bounce, this);
                 const fg = (this.get_value_off = function (frame: number) {
                     return this.get_value(fo(frame));
                 })
@@ -103,18 +95,13 @@ export class Animated<V> {
         add?: boolean
     ) {
         const { kfs } = this;
-        /* c8 ignore start */
-        if (!(kfs instanceof Keyframes)) {
-            throw new Error(`unexpected`);
-        }
-        /* c8 ignore stop */
         let last = kfs.at(-1);
         if (last) {
             if (start == undefined) {
                 // pass
             } else if (start > last.time) {
                 last.easing = true;
-                last = kfs.push_value(start, last.value);
+                last = push_kfe(kfs, start, last.value);
             } else {
                 if (start != last.time) {
                     throw new Error(
@@ -126,7 +113,7 @@ export class Animated<V> {
             if (start == undefined) {
                 // pass
             } else {
-                last = kfs.push_value(start, this.initial_value());
+                last = push_kfe(kfs, start, this.initial_value());
             }
         }
 
@@ -141,7 +128,7 @@ export class Animated<V> {
         }
         delete this['get_value_off'];
         delete this['_end'];
-        return kfs.push_value(frame, value);
+        return push_kfe(kfs, frame, value);
     }
 
     hold_last_value(frame: number) {
@@ -150,7 +137,7 @@ export class Animated<V> {
         if (last) {
             if (frame > last.time) {
                 last.easing = true;
-                last = kfs.push_value(frame, last.value);
+                last = push_kfe(kfs, frame, last.value);
             } else {
                 if (frame != last.time) {
                     throw new Error(
@@ -159,10 +146,16 @@ export class Animated<V> {
                 }
             }
         } else {
-            last = kfs.push_value(frame, this.initial_value());
+            last = push_kfe(kfs, frame, this.initial_value());
         }
         return last;
     }
+    *enum_values(start: number, end: number) {
+        while (start < end) {
+            yield this.get_value(start++);
+        }
+    }
+
 
     frame_range(): [number, number] {
 
@@ -170,7 +163,9 @@ export class Animated<V> {
             try {
                 this.get_value_off?.(NaN);
             } catch (e) {
-
+                if (!(e instanceof TypeError)) {
+                    throw Error(`Unexpected`);
+                }
             }
         }
 

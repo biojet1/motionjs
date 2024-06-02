@@ -51,7 +51,7 @@ test.test("Seq stagger", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run(Seq(To([a], 5), To([b], 6), To([c], 5)).stagger(0.25));
+    tr.run(Seq(To([a], 5), To([b], 6), To([c], 5)).set({ stagger: 0.25 }));
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2, 3, 4, 5, 6, 6, 6, 6, 6]);
     t.same(cata(c, 0, 10), [9, 9, 9, 8, 7, 6, 5, 5, 5, 5]);
@@ -67,7 +67,7 @@ test.test("Seq delay", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run(Seq(Add([a], 4), Add([b], 4), Add([c], -4)).delay(0.25));
+    tr.run(Seq(Add([a], 4), Add([b], 4), Add([c], -4)).set({ delay: 0.25 }));
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 14), [2, 2, 2, 2, 2, 2, 3, 4, 5, 6, 6, 6, 6, 6]);
     t.same(

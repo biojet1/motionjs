@@ -1,7 +1,7 @@
 "uses strict";
 import test from "tap";
 import * as m3 from "3motion";
-import { ratio_at, offset_fun } from "../dist/keyframe/kfhelper.js";
+import { ratio_at, iter_frame_fun } from "../dist/keyframe/kfhelper.js";
 import { cata } from "./utils.js";
 
 test.test("Easing should be symetrical", (t) => {
@@ -258,18 +258,20 @@ test.test("Step Easing bounce", (t) => {
     t.end();
 });
 
-test.test("offset_fun", (t) => {
+test.test("iter_frame_fun", (t) => {
     const o = {}
-    let off = offset_fun(4, 4, 3, false, o);
+    let off = iter_frame_fun(4, 4, 3, false, o);
     t.same([off(3), off(4), off(5)], [4, 4, 4]);
     t.same([o._start, o._end], [4, 4]);
     t.throws(() => {
-        offset_fun(5, 4, 3, false, o);
+        iter_frame_fun(5, 4, 3, false, o);
     });
     t.throws(() => {
-        offset_fun(3, 4, 0, false, o);
+        iter_frame_fun(3, 4, 0, false, o);
     });
-    off = offset_fun(4, 7, 1, false, o);
+    off = iter_frame_fun(4, 7, 1, false, o);
     t.same([off(1), off(2), off(3), off(4), off(5), off(6), off(7), off(8), off(9)], [4, 4, 4, 4, 5, 6, 7, 7, 7]);
+    off = iter_frame_fun(9, 11, 2, true, o);
+    t.same([off(8), off(9), off(10), off(11), off(12), off(13), off(14), off(15), off(16), off(17), off(18), off(19), off(20)], [9, 9, 10, 11, 10, 9, 10, 11, 10, 9, 17, 17, 17]);
     t.end();
 });

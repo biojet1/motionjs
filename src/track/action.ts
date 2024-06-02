@@ -33,6 +33,10 @@ export class Action implements IAction {
     _start: number = -Infinity;
     _end: number = -Infinity;
     _dur?: number;
+    _params?: {
+        easing?: Iterable<number> | boolean;
+        dur?: number;
+    };
     /* c8 ignore start */
     ready(parent: IParent): void {
         throw new Error("Not implemented");
@@ -52,6 +56,10 @@ export class Action implements IAction {
     get_active_dur() {
         return this._end - this._start;
     }
+    set(x: this['_params']) {
+        Object.assign(this._params ?? (this._params = {}), x);
+        return this;
+    }
 }
 
 export abstract class Actions extends Array<Action | Actions> implements IAction {
@@ -64,10 +72,9 @@ export abstract class Actions extends Array<Action | Actions> implements IAction
         hint_dur?: number;
     } = {};
     ready(parent: IParent): void {
-        this._easing = this._easing ?? parent.easing;
-        if (this._hint_dur != undefined) {
-            this._hint_dur = parent.to_frame(this._hint_dur);
-        }
+        const { easing, hint_dur } = this._params;
+        this._easing = easing ?? parent.easing;
+        (hint_dur != undefined) && (this._hint_dur = parent.to_frame(hint_dur));
     }
     run() {
         for (const act of this) {
@@ -82,22 +89,24 @@ export abstract class Actions extends Array<Action | Actions> implements IAction
     get_active_dur() {
         return this._end - this._start;
     }
+    set(x: this['_params']) {
+        Object.assign(this._params ?? (this._params = {}), x);
+        return this;
+    }
+
     abstract resolve(frame: number, base_frame: number, hint_dur: number): void;
 }
 
 export class SeqA extends Actions {
     _delay?: number;
     _stagger?: number;
-    _delay_sec?: number;
-    _stagger_sec?: number;
-
     _params: Actions['_params'] & { delay?: number; stagger?: number } = {};
 
     ready(parent: IParent): void {
         super.ready(parent);
-        const { _delay_sec, _stagger_sec } = this;
-        _delay_sec && (this._delay = parent.to_frame(_delay_sec));
-        _stagger_sec && (this._stagger = parent.to_frame(_stagger_sec));
+        const { delay, stagger } = this._params;
+        delay && (this._delay = parent.to_frame(delay));
+        stagger && (this._stagger = parent.to_frame(stagger));
         for (const act of this) {
             act.ready(parent);
         }
@@ -129,18 +138,15 @@ export class SeqA extends Actions {
         this._start = frame;
         this._end = e;
     }
-    delay(sec: number) {
-        this._delay_sec = sec;
-        return this;
-    }
-    stagger(sec: number) {
-        this._stagger_sec = sec;
-        return this;
-    }
-    params(x: this['params']) {
-        this._params = x;
-        return this;
-    }
+    // delay(sec: number) {
+    //     this._delay_sec = sec;
+    //     return this;
+    // }
+    // stagger(sec: number) {
+    //     this._stagger_sec = sec;
+    //     return this;
+    // }
+
 }
 
 export function Seq(...items: Array<Action | Actions>) {
@@ -201,14 +207,13 @@ export function ParE(...items: Array<Action | Actions>) {
 
 export class ToA extends Action {
     _easing?: Iterable<number> | boolean;
-    constructor(props: IProperty<any>[], value: any, dur?: number) {
+
+    constructor(props: IProperty<any>[], value: any) {
         super();
         this.ready = function (parent: IParent): void {
-            const { _easing } = this;
+            const { dur, easing } = this._params ?? {};
             this._dur = (dur == undefined) ? undefined : parent.to_frame(dur);
-            if (!_easing) {
-                this._easing = parent.easing;
-            }
+            this._easing = easing ?? parent.easing;
             for (const prop of props) {
                 parent.add_prop(prop);
             }
@@ -234,14 +239,12 @@ export class PassA extends Action {
 
 export class AddA extends Action {
     _easing?: Iterable<number> | boolean;
-    constructor(props: IProperty<any>[], value: any, dur?: number) {
+    constructor(props: IProperty<any>[], value: any) {
         super();
         this.ready = function (parent: IParent): void {
-            const { _easing } = this;
+            const { dur, easing } = this._params ?? {};
             this._dur = (dur == undefined) ? undefined : parent.to_frame(dur);
-            if (!_easing) {
-                this._easing = parent.easing;
-            }
+            this._easing = easing ?? parent.easing;
             for (const prop of props) {
                 parent.add_prop(prop);
             }
@@ -263,12 +266,12 @@ function list_props(x: IProperty<any>[] | IProperty<any>) {
     }
 }
 
-export function To(props: IProperty<any>[] | IProperty<any>, value: any, dur?: number) {
-    return new ToA(list_props(props), value, dur);
+export function To(props: IProperty<any>[] | IProperty<any>, value: any, dur?: number, easing?: Iterable<number> | boolean) {
+    return (new ToA(list_props(props), value)).set({ dur, easing });
 }
 
-export function Add(props: IProperty<any>[] | IProperty<any>, value: any, dur?: number) {
-    return new AddA(list_props(props), value, dur);
+export function Add(props: IProperty<any>[] | IProperty<any>, value: any, dur?: number, easing?: Iterable<number> | boolean) {
+    return (new AddA(list_props(props), value)).set({ dur, easing });
 }
 
 export function Pass(dur?: number) {
