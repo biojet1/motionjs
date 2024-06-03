@@ -3,7 +3,7 @@ import { cubic_bezier_y_of_x } from "./bezier.js";
 export interface KeyframeEntry<V> {
     time: number;
     value: V;
-    easing?: Iterable<number> | boolean;
+    easing?: Iterable<number> | true;
 }
 
 export function push_kfe<V>(kfs: Array<KeyframeEntry<V>>, time: number, value: V): KeyframeEntry<V> {
