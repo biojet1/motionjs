@@ -98,7 +98,8 @@ export class Animated<V> {
                 // pass
             } else if (start > last.time) {
                 last.easing = true;
-                last = push_kfe(kfs, start, last.value);
+                // last = push_kfe(kfs, start, last.value);
+                last = this.add_keyframe(start, last.value);
             } else {
                 if (start != last.time) {
                     throw new Error(
@@ -110,11 +111,14 @@ export class Animated<V> {
             if (start == undefined) {
                 // pass
             } else {
-                last = push_kfe(kfs, start, this.initial_value());
+                // last = push_kfe(kfs, start, this.initial_value());
+                last = this.add_keyframe(start, this.initial_value());
             }
         }
 
         value = this.check_value(value);
+        delete this['get_value_off'];
+        delete this['_end'];
         if (last) {
             if (easing != undefined) {
                 last.easing = easing;
@@ -122,19 +126,38 @@ export class Animated<V> {
             if (add) {
                 value = this.add_value(last.value, value);
             }
+            if (last.time == frame) {
+                last.value = value;
+                return last;
+            } else if (frame < last.time) {
+                throw new Error(
+                    `unexpected start=${start} last.time=${last.time} time=${frame} value=${value} by '${this.constructor.name}'`
+                );
+            }
         }
-        delete this['get_value_off'];
-        delete this['_end'];
-        return push_kfe(kfs, frame, value);
+        return this.add_keyframe(frame, value);
+        // return push_kfe(kfs, frame, value);
     }
-
+    add_keyframe(
+        time: number,
+        value: V,
+        easing?: Iterable<number> | true,
+    ) {
+        const kf: KeyframeEntry<V> = { time, value };
+        this.kfs.push(kf);
+        if (easing) {
+            kf.easing = easing;
+        }
+        return kf;
+    }
     hold_last_value(frame: number) {
         const { kfs } = this;
         let last = kfs.at(-1);
         if (last) {
             if (frame > last.time) {
                 last.easing = true;
-                last = push_kfe(kfs, frame, last.value);
+                // last = push_kfe(kfs, frame, last.value);
+                last = this.add_keyframe(frame, last.value);
             } else {
                 if (frame != last.time) {
                     throw new Error(
@@ -143,7 +166,8 @@ export class Animated<V> {
                 }
             }
         } else {
-            last = push_kfe(kfs, frame, this.initial_value());
+            last = this.add_keyframe(frame, this.initial_value());
+            // last = push_kfe(kfs, frame, this.initial_value());
         }
         return last;
     }

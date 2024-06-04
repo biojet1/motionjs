@@ -245,6 +245,7 @@ test.test("key_value incresing", (t) => {
     a.key_value(1, 5);
     t.throws(() => {
         a.key_value(0, 8);
+        console.log(a.kfs);
     });
     a.key_value(2, 4, 1);
     t.throws(() => {
