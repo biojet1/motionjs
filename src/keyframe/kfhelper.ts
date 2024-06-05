@@ -6,21 +6,6 @@ export interface KeyframeEntry<V> {
     easing?: Iterable<number> | true;
 }
 
-export function push_kfe<V>(kfs: Array<KeyframeEntry<V>>, time: number, value: V): KeyframeEntry<V> {
-    let last = kfs.at(-1);
-    if (last) {
-        if (last.time == time) {
-            last.value = value;
-            return last;
-        } else if (time < last.time) {
-            throw new Error(`keyframe is incremental`);
-        }
-    }
-    const kf = { time, value };
-    kfs.push(kf);
-    return kf;
-}
-
 export function ratio_at(a: Iterable<number>, t: number) {
     const [ox, oy, ix, iy] = a;
     return cubic_bezier_y_of_x([0, 0], [ox, oy], [ix, iy], [1, 1])(t);

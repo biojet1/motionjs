@@ -1,4 +1,4 @@
-import { KeyframeEntry, iter_frame_fun, push_kfe, ratio_at } from "./kfhelper.js";
+import { KeyframeEntry, iter_frame_fun, ratio_at } from "./kfhelper.js";
 
 export class Animated<V> {
     kfs: Array<KeyframeEntry<V>> = [];
@@ -47,7 +47,7 @@ export class Animated<V> {
                     if (easing) {
                         r = ratio_at(easing, r);
                     }
-                    return this.lerp_value(r, value, k.value);
+                    return this.lerp_keyframes(r, p, k);
                 } else {
                     return k.value;
                 }
@@ -59,7 +59,10 @@ export class Animated<V> {
         if (p) {
             return this.get_value_off!(frame);
         }
-        return this.initial_value()
+        return this.initial_value();
+    }
+    lerp_keyframes(t: number, p: KeyframeEntry<V>, k: KeyframeEntry<V>) {
+        return this.lerp_value(t, p.value, k.value);
     }
     // static
     get_value_off?(frame: number): V {
@@ -69,10 +72,16 @@ export class Animated<V> {
             const last = kfs.at(-1);
             if (last) {
                 let { _repeat_count, _bounce } = this;
-                const fo = iter_frame_fun(first.time, last.time, _repeat_count, _bounce, this);
+                const fo = iter_frame_fun(
+                    first.time,
+                    last.time,
+                    _repeat_count,
+                    _bounce,
+                    this
+                );
                 const fg = (this.get_value_off = function (frame: number) {
                     return this.get_value(fo(frame));
-                })
+                });
                 if (Number.isNaN(frame)) {
                     throw new TypeError();
                 } else {
@@ -98,7 +107,6 @@ export class Animated<V> {
                 // pass
             } else if (start > last.time) {
                 last.easing = true;
-                // last = push_kfe(kfs, start, last.value);
                 last = this.add_keyframe(start, last.value);
             } else {
                 if (start != last.time) {
@@ -111,14 +119,13 @@ export class Animated<V> {
             if (start == undefined) {
                 // pass
             } else {
-                // last = push_kfe(kfs, start, this.initial_value());
                 last = this.add_keyframe(start, this.initial_value());
             }
         }
 
         value = this.check_value(value);
-        delete this['get_value_off'];
-        delete this['_end'];
+        delete this["get_value_off"];
+        delete this["_end"];
         if (last) {
             if (easing != undefined) {
                 last.easing = easing;
@@ -136,18 +143,17 @@ export class Animated<V> {
             }
         }
         return this.add_keyframe(frame, value);
-        // return push_kfe(kfs, frame, value);
     }
-    add_keyframe(
-        time: number,
-        value: V,
-        easing?: Iterable<number> | true,
-    ) {
+    new_keyframe(time: number, value: V, easing?: Iterable<number> | true) {
         const kf: KeyframeEntry<V> = { time, value };
-        this.kfs.push(kf);
         if (easing) {
             kf.easing = easing;
         }
+        return kf;
+    }
+    add_keyframe(time: number, value: V, easing?: Iterable<number> | true) {
+        const kf = this.new_keyframe(time, value, easing);
+        this.kfs.push(kf);
         return kf;
     }
     hold_last_value(frame: number) {
@@ -156,7 +162,6 @@ export class Animated<V> {
         if (last) {
             if (frame > last.time) {
                 last.easing = true;
-                // last = push_kfe(kfs, frame, last.value);
                 last = this.add_keyframe(frame, last.value);
             } else {
                 if (frame != last.time) {
@@ -167,7 +172,6 @@ export class Animated<V> {
             }
         } else {
             last = this.add_keyframe(frame, this.initial_value());
-            // last = push_kfe(kfs, frame, this.initial_value());
         }
         return last;
     }
@@ -177,9 +181,7 @@ export class Animated<V> {
         }
     }
 
-
     frame_range(): [number, number] {
-
         if (this._end == undefined) {
             try {
                 this.get_value_off?.(NaN);
@@ -201,8 +203,8 @@ export class Animated<V> {
     repeat(count: number = 2, bounce: boolean = false) {
         this._repeat_count = count;
         this._bounce = bounce;
-        delete this['get_value_off'];
-        delete this['_end'];
+        delete this["get_value_off"];
+        delete this["_end"];
         return this;
     }
 }
