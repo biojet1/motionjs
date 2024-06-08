@@ -86,7 +86,7 @@ test.test("ParE", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run(ParE(Add([a], 4), Add([b], 4, 2), Add([c], -4)));
+    tr.run(ParE(Add([a], 4), Add([b], 4, { dur: 2 }), Add([c], -4)));
     t.equal(tr.frame, 4 + 4);
     t.same(cata(a, 0, 10), [1, 1, 1, 1, 1, 2, 3, 4, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6]);
@@ -103,7 +103,7 @@ test.test("Par", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run(Par(Add([a], 4), Add(b, 4, 2), Add([c], -4)));
+    tr.run(Par(Add([a], 4), Add(b, 4, { dur: 2 }), Add([c], -4)));
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6]);
     t.same(cata(c, 0, 10), [9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5, 5]);
@@ -119,7 +119,7 @@ test.test("run parallel", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run([Add([a], 4), Add(b, 4, 2), Add([c], -4)]);
+    tr.run([Add([a], 4), Add(b, 4, { dur: 2 }), Add([c], -4)]);
     t.equal(tr.frame, 8);
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6]);
@@ -247,9 +247,9 @@ test.test("key_value incresing", (t) => {
         a.key_value(0, 8);
         console.log(a.kfs);
     });
-    a.key_value(2, 4, 1);
+    a.key_value(2, 4, { start: 1 });
     t.throws(() => {
-        a.key_value(3, 4, 1);
+        a.key_value(3, 4, { start: 1 });
     });
     t.same(cata(a, 0, 3), [6, 5, 4]);
     a.hold_last_value(7);

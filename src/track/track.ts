@@ -5,7 +5,7 @@ export class Track {
     frame: number = 0;
     frame_rate: number = 60;
     hint_dur: number = 60; // 1s * frame_rate
-    easing?: Iterable<number> | boolean;
+    easing?: Iterable<number> | true;
     properties?: Set<IProperty<any>>;
     add_prop(prop: IProperty<any>) {
         this.properties?.add(prop);

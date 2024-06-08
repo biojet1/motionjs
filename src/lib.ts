@@ -85,7 +85,7 @@ export function animate({
 export class Root {
     frame_rate: number = 60;
     hint_dur: number = 60; // 1s * frame_rate
-    easing: Iterable<number> | boolean = false;
+    easing?: Iterable<number> | true;
     properties = new Set<Property<any>>();
 
     track(frame: number = 0) {

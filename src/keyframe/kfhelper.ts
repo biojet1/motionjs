@@ -1,10 +1,11 @@
 import { cubic_bezier_y_of_x } from "./bezier.js";
 
-export interface KeyframeEntry<V> {
+export type Keyframe<V> = {
     time: number;
     value: V;
-    easing?: Iterable<number> | true;
-}
+    easing?: Iterable<number> | Array<number> | true;
+    [k: string]: any;
+};
 
 export function ratio_at(a: Iterable<number>, t: number) {
     const [ox, oy, ix, iy] = a;

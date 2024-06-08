@@ -1,7 +1,14 @@
-import { KeyframeEntry, iter_frame_fun, ratio_at } from "./kfhelper.js";
+import { Keyframe, iter_frame_fun, ratio_at } from "./kfhelper.js";
 
-export class Animated<V> {
-    kfs: Array<KeyframeEntry<V>> = [];
+export type KeyExtra = {
+    start?: number,
+    easing?: Iterable<number> | true,
+    curve?: Array<number[]>,
+    add?: boolean
+}
+
+export class Animated<V, K extends Keyframe<V> = Keyframe<V>> {
+    kfs: Array<K> = [];
     _repeat_count?: number;
     _bounce?: boolean;
     _end?: number;
@@ -35,7 +42,7 @@ export class Animated<V> {
     get_value(frame: number): V {
         const { kfs } = this;
 
-        let p = undefined; // previous KeyframeEntry<V>
+        let p = undefined; // previous Keyframe<V>
         for (const k of kfs) {
             if (frame < k.time) {
                 if (p) {
@@ -61,7 +68,7 @@ export class Animated<V> {
         }
         return this.initial_value();
     }
-    lerp_keyframes(t: number, p: KeyframeEntry<V>, k: KeyframeEntry<V>) {
+    lerp_keyframes(t: number, p: K, k: K) {
         return this.lerp_value(t, p.value, k.value);
     }
     // static
@@ -96,10 +103,9 @@ export class Animated<V> {
     key_value(
         frame: number,
         value: V,
-        start?: number,
-        easing?: Iterable<number> | true,
-        add?: boolean
+        extra?: KeyExtra
     ) {
+        const { start, easing, add } = extra ?? {};
         const { kfs } = this;
         let last = kfs.at(-1);
         if (last) {
@@ -144,12 +150,12 @@ export class Animated<V> {
         }
         return this.add_keyframe(frame, value);
     }
-    new_keyframe(time: number, value: V, easing?: Iterable<number> | true) {
-        const kf: KeyframeEntry<V> = { time, value };
+    new_keyframe(time: number, value: V, easing?: Iterable<number> | true): K {
+        const kf: Keyframe<V> = { time, value };
         if (easing) {
             kf.easing = easing;
         }
-        return kf;
+        return kf as K;
     }
     add_keyframe(time: number, value: V, easing?: Iterable<number> | true) {
         const kf = this.new_keyframe(time, value, easing);

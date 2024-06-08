@@ -51,8 +51,8 @@ const iro1 = new m3.ColorProperty(cube.material, 'color');
 const cuber = cube.rotation.num$('y');
 camera.position.z = 5;
 camZ.key_value(0, 4)
-camZ.key_value(60 * 2, 5)
-camZ.key_value(60 * 3, 3)
+camZ.key_value(60 * 2, { start: 5 })
+camZ.key_value(60 * 3, { start: 3 })
 camZ.repeat(-1, true);
 
 const root = new m3.Root();
