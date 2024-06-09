@@ -5,6 +5,7 @@ import { Track } from "./track/track.js";
 export * from "./keyframe/keyframe.js";
 export * from "./track/index.js";
 export * from "./properties.js";
+export * from "./position.js";
 const { floor } = Math;
 
 export function formatTime(sec: number) {

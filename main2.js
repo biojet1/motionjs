@@ -7,7 +7,7 @@ import { ParametricGeometry } from "three/addons/geometries/ParametricGeometry.j
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls";
 import * as m3 from "3motion";
-import { To, Seq, Step } from "3motion";
+import { To, Seq, Step, Add } from "3motion";
 
 function main(renderer) {
     const fov = 40;
@@ -166,7 +166,7 @@ function main(renderer) {
         return addSolidGeometry(1, 1, new THREE.OctahedronGeometry(radius));
     })();
 
-    {
+    const klein = (() => {
         /*
         from: https://github.com/mrdoob/three.js/blob/b8d8a8625465bd634aa68e5846354d69f34d2ff5/examples/js/ParametricGeometries.js
     
@@ -222,8 +222,10 @@ function main(renderer) {
 
         const slices = 25;
         const stacks = 25;
-        addSolidGeometry(2, 1, new ParametricGeometry(klein, slices, stacks));
-    }
+        return addSolidGeometry(2, 1, new ParametricGeometry(klein, slices, stacks));
+    })();
+
+
 
     {
         const width = 9;
@@ -468,8 +470,17 @@ function main(renderer) {
     const pox = new m3.NumericProperty(cylin.position, "x");
 
     const poz = new m3.NumericProperty(dode.position, "z");
+    const p3 = new m3.PositionProperty(klein, "position");
+    const r3 = new m3.NumericProperty(klein.rotation, "x");
+    // klein
+    console.log(klein.position);
+    console.log(p3.initial_value());
+    root.track(0).run(Add(p3, [15, -5, 50], { dur: 2, curve: [[20, -100, 4], [-15, 40, 1]] }));
+    root.track(0).run(To(r3, 3, { dur: 2 }));
+
     const { Easing } = m3;
-    // console.log(box);
+    console.log(p3);
+    p3.repeat(2, true);
     root.track(0).run(
         m3.Step(
             [
@@ -479,10 +490,10 @@ function main(renderer) {
                     dur: 1,
                     wid: 1,
                     ro1: -1,
-                    ease: Easing.inoutexpo,
+                    easing: Easing.inoutexpo,
                     pox: m3.Step.add(50),
                 },
-                { dur: 1, wid: 2, ro1: 2, ease: Easing.inoutsine, pox: m3.Step.first },
+                { dur: 1, wid: 2, ro1: 2, easing: Easing.inoutsine, pox: m3.Step.first },
             ],
             { wid, ro1, pox: [pox, poz] }
         )
@@ -496,13 +507,13 @@ function main(renderer) {
         // tr1.run(To([r1], 2));
         // tr1.run(To([r2], 2));
         // tr1.run(To([r3], 2));
-        tr1.run(Seq(To([r3], -3), To([r2], -3), To([r1], -3)));
+        tr1.run(Seq([To([r3], -3), To([r2], -3), To([r1], -3)]));
         // console.log(r3.value);
         // console.log(r2.value);
-        tr1.run(Par(To([r3], 2), To([r2], 2), To([r1], 2)));
-        tr1.run(Seq(To([r3], 0), To([r2], 0), To([r1], 0)).set({ delay: 0.5 }));
-        tr1.run(Par(To([r3], 3), To([r2], 3), To([r1], 3)));
-        tr1.run(Seq(To([r3], 0), To([r2], 0), To([r1], 0)).set({ stagger: 0.5 }));
+        tr1.run(Par([To([r3], 2), To([r2], 2), To([r1], 2)]));
+        tr1.run(Seq([To([r3], 0), To([r2], 0), To([r1], 0)], { delay: 0.5 }));
+        tr1.run(Par([To([r3], 3), To([r2], 3), To([r1], 3)]));
+        tr1.run(Seq([To([r3], 0), To([r2], 0), To([r1], 0)], { stagger: 0.5 }));
     }
     wid.repeat(-1, true);
     return [root, scene, camera];

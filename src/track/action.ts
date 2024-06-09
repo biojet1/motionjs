@@ -93,10 +93,6 @@ export abstract class Actions
     get_active_dur() {
         return this._end - this._start;
     }
-    set(x: this["_params"]) {
-        Object.assign(this._params ?? (this._params = {}), x);
-        return this;
-    }
 
     abstract resolve(frame: number, base_frame: number, hint_dur: number): void;
 }
@@ -144,8 +140,19 @@ export class SeqA extends Actions {
     }
 }
 
-export function Seq(...items: Array<Action | Actions>) {
+export function Seq(items: Array<Action | Actions>, params?: SeqA['_params']) {
+    if (!Array.isArray(items)) {
+        throw new Error(`Unexpected`)
+    } else {
+        for (const a of items) {
+            if (a instanceof Action || a instanceof Actions) {
+                continue;
+            }
+            throw new Error(`Unexpected`);
+        }
+    }
     const x = new SeqA(...items);
+    params && (x._params = params);
     return x;
 }
 
@@ -194,13 +201,24 @@ export class ParA extends Actions {
     }
 }
 
-export function Par(...items: Array<Action | Actions>) {
+export function Par(items: Array<Action | Actions>, params?: ParA['_params']) {
+    if (!Array.isArray(items)) {
+        throw new Error(`Unexpected`)
+    } else {
+        for (const a of items) {
+            if (a instanceof Action || a instanceof Actions) {
+                continue;
+            }
+            throw new Error(`Unexpected`);
+        }
+    }
     const x = new ParA(...items);
+    params && (x._params = params);
     return x;
 }
 
-export function ParE(...items: Array<Action | Actions>) {
-    const x = new ParA(...items);
+export function ParE(items: Array<Action | Actions>, params?: ParA['_params']) {
+    const x = Par(items);
     x._tail = true;
     return x;
 }
@@ -288,6 +306,21 @@ export function Add(
     params?: ParamsT
 ) {
     return new AddA(list_props(props), value, params);
+}
+
+export function To2(
+    props: IProperty<any>[] | IProperty<any>,
+    value: any,
+    params: ParamsT = {}
+) {
+    const map = new WeakMap<IProperty<any>>();
+    const ps = list_props(props);
+    for (const p of ps) {
+        map.set(p, params)
+    }
+
+
+    return new ToA(list_props(props), value, params);
 }
 
 export function Pass(dur?: number) {

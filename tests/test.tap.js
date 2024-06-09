@@ -13,14 +13,14 @@ test.test("Seq then Par", (t) => {
 
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run(Seq(To([a], 9), To([b], 10), To([c], 11)));
+    tr.run(Seq([To([a], 9), To([b], 10), To([c], 11)]));
 
     console.log(a.value);
     t.same(catg(a, 0, 20), "1:3:5:7:9:9:9:9:9:9:9:9:9:9:9:9:9:9:9:9");
     t.same(catg(b, 0, 20), "2:2:2:2:2:4:6:8:10:10:10:10:10:10:10:10:10:10:10:10");
     t.same(catg(c, 0, 20), "3:3:3:3:3:3:3:3:3:5:7:9:11:11:11:11:11:11:11:11");
 
-    tr.run(Par(To([a], 1), To([b], 1), To([c], 1)));
+    tr.run(Par([To([a], 1), To([b], 1), To([c], 1)]));
     t.same(
         cata(a, 0, 20),
         [1, 3, 5, 7, 9, 9, 9, 9, 9, 9, 9, 9, 9, 7, 5, 3, 1, 1, 1, 1]
@@ -51,7 +51,7 @@ test.test("Seq stagger", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run(Seq(To([a], 5), To([b], 6), To([c], 5)).set({ stagger: 0.25 }));
+    tr.run(Seq([To([a], 5), To([b], 6), To([c], 5)], { stagger: 0.25 }));
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2, 3, 4, 5, 6, 6, 6, 6, 6]);
     t.same(cata(c, 0, 10), [9, 9, 9, 8, 7, 6, 5, 5, 5, 5]);
@@ -67,7 +67,7 @@ test.test("Seq delay", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run(Seq(Add([a], 4), Add([b], 4), Add([c], -4)).set({ delay: 0.25 }));
+    tr.run(Seq([Add([a], 4), Add([b], 4), Add([c], -4)], { delay: 0.25 }));
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 14), [2, 2, 2, 2, 2, 2, 3, 4, 5, 6, 6, 6, 6, 6]);
     t.same(
@@ -86,7 +86,7 @@ test.test("ParE", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run(ParE(Add([a], 4), Add([b], 4, { dur: 2 }), Add([c], -4)));
+    tr.run(ParE([Add([a], 4), Add([b], 4, { dur: 2 }), Add([c], -4)]));
     t.equal(tr.frame, 4 + 4);
     t.same(cata(a, 0, 10), [1, 1, 1, 1, 1, 2, 3, 4, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6]);
@@ -103,7 +103,7 @@ test.test("Par", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run(Par(Add([a], 4), Add(b, 4, { dur: 2 }), Add([c], -4)));
+    tr.run(Par([Add([a], 4), Add(b, 4, { dur: 2 }), Add([c], -4)]));
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6]);
     t.same(cata(c, 0, 10), [9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5, 5]);
@@ -119,7 +119,7 @@ test.test("run parallel", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.run([Add([a], 4), Add(b, 4, { dur: 2 }), Add([c], -4)]);
+    tr.run([Add(a, 4), Add(b, 4, { dur: 2 }), Add(c, -4)]);
     t.equal(tr.frame, 8);
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6]);

@@ -90,7 +90,7 @@ test.test("Step Easing", (t) => {
     tr.easing = Easing.sigmoid;
     tr.step(
         [
-            { dur: 1, a: 10000, ease: Easing.outback, b: 0 },
+            { dur: 1, a: 10000, easing: Easing.outback, b: 0 },
             { dur: 1, b: 10000, a: Step.add(-10000) },
         ],
         { a, b }
@@ -127,7 +127,7 @@ test.test("Step Easing use track hint_dur", (t) => {
     tr.step(
         [
             { t: 0 },
-            { a: 10000, ease: Easing.outback, b: 0 },
+            { a: 10000, easing: Easing.outback, b: 0 },
             { b: 10000, a: Step.add(-10000) },
         ],
         { a, b }
@@ -165,7 +165,7 @@ test.test("Step Easing use step hint_dur", (t) => {
     tr.step(
         [
             { t: 0 },
-            { a: 10000, ease: Easing.outback, b: 0 },
+            { a: 10000, easing: Easing.outback, b: 0 },
             { b: 10000, a: Step.add(-10000) },
         ],
         { a, b }, { dur: 1 }
@@ -202,7 +202,7 @@ test.test("Step Easing use step max_dur", (t) => {
     tr.easing = Easing.sigmoid;
     tr.step(
         [
-            { a: 10000, ease: Easing.outback, b: 0, t: -1 },
+            { a: 10000, easing: Easing.outback, b: 0, t: -1 },
             { b: 10000, a: Step.add(-10000) },
         ],
         { a, b }, { dur: 1, max_dur: 2 }
@@ -239,8 +239,8 @@ test.test("Step Easing bounce", (t) => {
     tr.step(
         [
             { t: 0 },
-            { a: 10000, ease: Easing.outback },
-            { a: 20000, ease: Easing.incirc },
+            { a: 10000, easing: Easing.outback },
+            { a: 20000, easing: Easing.incirc },
         ],
         { a, b }, { bounce: true }
     );

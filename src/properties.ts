@@ -1,6 +1,7 @@
 import { Animated } from "./keyframe/keyframe.js";
+import { Keyframe, iter_frame_fun, ratio_at } from "./keyframe/kfhelper.js";
 
-export class Property<V> extends Animated<V> {
+export class Property<V, K extends Keyframe<V> = Keyframe<V>> extends Animated<V, K> {
     owner: any;
     name: string;
     constructor(owner: any, name: string) {
