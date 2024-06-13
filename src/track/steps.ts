@@ -112,6 +112,7 @@ export class StepA extends Action {
     _vars: PropMap;
     _kf_map?: KFMap;
     constructor(
+        parent: IParent,
         steps: Array<UserEntry>,
         vars: PropMap,
         { dur, easing, bounce, repeat, max_dur }: Params
@@ -120,60 +121,58 @@ export class StepA extends Action {
         this._steps = steps;
         this._vars = vars;
         this._base_frame = Infinity;
-        this.ready = function (parent: IParent): void {
-            this._dur = dur == undefined ? undefined : parent.to_frame(dur);
-            this._max_dur =
-                max_dur == undefined ? undefined : parent.to_frame(max_dur);
-            if (repeat) {
-                this._repeat = repeat;
-            }
-            if (bounce) {
-                this._bounce = bounce;
-            }
-            easing = this._easing ?? easing ?? parent.easing;
+        this._dur = dur == undefined ? undefined : parent.to_frame(dur);
+        this._max_dur =
+            max_dur == undefined ? undefined : parent.to_frame(max_dur);
+        if (repeat) {
+            this._repeat = repeat;
+        }
+        if (bounce) {
+            this._bounce = bounce;
+        }
+        easing = this._easing ?? easing ?? parent.easing;
 
-            // collect names, parse inputs
-            const names: Array<string> = [];
-            this._steps.map((e, _i, _a) => {
-                if (easing != undefined) {
-                    if (e.easing == undefined) {
-                        e.easing = easing;
-                    }
-                }
-                for (const [k, v] of Object.entries(e)) {
-                    switch (k) {
-                        case "dur":
-                        case "t":
-                            e[k] = parent.to_frame(v);
-                            continue;
-                        case "easing":
-                        case "curve":
-                            // v == undefined || (e[k] = easing);
-                            continue;
-                    }
-                    if (vars[k]) {
-                        names.push(k);
-                    } else {
-                        delete e[k];
-                    }
-                }
-            });
-            // drop property not present
-            for (const [k, prop] of Object.entries(this._vars)) {
-                if (names.indexOf(k) < 0) {
-                    delete vars[k];
-                } else {
-                    if (Array.isArray(prop)) {
-                        for (const x of prop) {
-                            parent.add_prop(x);
-                        }
-                    } else {
-                        parent.add_prop(prop);
-                    }
+        // collect names, parse inputs
+        const names: Array<string> = [];
+        this._steps.map((e, _i, _a) => {
+            if (easing != undefined) {
+                if (e.easing == undefined) {
+                    e.easing = easing;
                 }
             }
-            // console.log("vars", vars, this._vars);
-        };
+            for (const [k, v] of Object.entries(e)) {
+                switch (k) {
+                    case "dur":
+                    case "t":
+                        e[k] = parent.to_frame(v);
+                        continue;
+                    case "easing":
+                    case "curve":
+                        // v == undefined || (e[k] = easing);
+                        continue;
+                }
+                if (vars[k]) {
+                    names.push(k);
+                } else {
+                    delete e[k];
+                }
+            }
+        });
+        // drop property not present
+        for (const [k, prop] of Object.entries(this._vars)) {
+            if (names.indexOf(k) < 0) {
+                delete vars[k];
+            } else {
+                if (Array.isArray(prop)) {
+                    for (const x of prop) {
+                        parent.add_prop(x);
+                    }
+                } else {
+                    parent.add_prop(prop);
+                }
+            }
+        }
+        // console.log("vars", vars, this._vars);
     }
     resolve(frame: number, base_frame: number, hint_dur: number): void {
         const {
@@ -420,12 +419,9 @@ function* enum_props(vars: PropMap, name: string) {
     }
 }
 
-export function Step(
-    steps: Array<UserEntry>,
-    vars: PropMap,
-    params: Params = {}
-) {
-    return new StepA(steps, vars, params);
+export function Step(steps: Array<UserEntry>, vars: PropMap, params: Params = {}) {
+    return (track: IParent) => new StepA(track, steps, vars, params);
+
 }
 
 Step.add = (value: any) => new Add(value);
