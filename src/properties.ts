@@ -11,7 +11,10 @@ export class Property<V, K extends Keyframe<V> = Keyframe<V>> extends Animated<V
     }
 
     update(frame: number = 0) {
-        this.owner[this.name] = this.get_value(frame);
+        this.set_value(this.get_value(frame));
+    }
+    set_value(v: V) {
+        this.owner[this.name] = v;
     }
     override initial_value() {
         return this.owner[this.name];

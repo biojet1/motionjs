@@ -127,7 +127,7 @@ test.test("run parallel", (t) => {
     t.end();
 });
 
-test.test("feed one", (t) => {
+test.test("run one", (t) => {
     const { Track, NumericProperty, To } = m3;
     let o = { x: 1, y: 2, z: 9 };
     let a = new NumericProperty(o, "x");
@@ -136,11 +136,11 @@ test.test("feed one", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.feed(To([a], 5));
+    tr.run(To([a], 5));
     t.equal(tr.frame, 4);
-    tr.feed(To([b], 6));
+    tr.run(To([b], 6));
     t.equal(tr.frame, 8);
-    tr.feed(To([c], 5));
+    tr.run(To([c], 5));
     t.equal(tr.frame, 12);
     t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 5, 5, 5, 5, 5]);
     t.same(cata(b, 0, 10), [2, 2, 2, 2, 2, 3, 4, 5, 6, 6]);
@@ -193,11 +193,11 @@ test.test("bounce repeat one", (t) => {
     let tr = new Track();
     tr.frame_rate = 4;
     tr.hint_dur = 4;
-    tr.feed(To(a, 5));
+    tr.run(To(a, 5));
     t.equal(tr.frame, 4);
-    tr.feed(To(b, 6));
+    tr.run(To(b, 6));
     t.equal(tr.frame, 8);
-    tr.feed(To(c, 5));
+    tr.run(To(c, 5));
     t.equal(tr.frame, 12);
     a.repeat(1, true);
     t.same(a.frame_range(), [0, 9]);
@@ -225,11 +225,11 @@ test.test("easing linear", (t) => {
     tr.frame_rate = 4;
     tr.hint_dur = 4;
     tr.easing = Easing.linear;
-    tr.feed(To([a], 5));
+    tr.run(To([a], 5));
     t.equal(tr.frame, 4);
-    tr.feed(To([b], 6));
+    tr.run(To([b], 6));
     t.equal(tr.frame, 8);
-    tr.feed(To([c], 5));
+    tr.run(To([c], 5));
     t.equal(tr.frame, 12);
     // console.log(c.value);
     t.same(cata(a, 0, 10).map(v => Math.round(v * 100)), [100, 200, 300, 400, 500, 500, 500, 500, 500, 500]);

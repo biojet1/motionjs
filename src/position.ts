@@ -4,10 +4,9 @@ import { Keyframe, iter_frame_fun, ratio_at } from "./keyframe/kfhelper.js";
 import { cubic_point3d_at, cubic_point_at } from "./keyframe/bezier.js";
 import { KeyExtra } from "./keyframe/keyframe.js";
 
-
-
-export class Vector3Property<K extends Keyframe<Vector3> = Keyframe<Vector3>> extends Property<Vector3, K> {
-
+export class Vector3Property<
+    K extends Keyframe<Vector3> = Keyframe<Vector3>
+> extends Property<Vector3, K> {
     override check_value(x: any): Vector3 {
         if (x instanceof Vector3) {
             return x;
@@ -28,17 +27,21 @@ export class Vector3Property<K extends Keyframe<Vector3> = Keyframe<Vector3>> ex
     override add_value(a: Vector3, b: Vector3): Vector3 {
         return a.clone().add(b);
     }
-    update(frame: number = 0) {
-        this.owner[this.name].copy(this.get_value(frame));
+    // override update(frame: number = 0) {
+    //     this.set_value(this.get_value(frame));
+    // }
+    override set_value(v: Vector3) {
+        this.owner[this.name].copy(v);
     }
-
 }
 export interface PositionKeyframe<V> extends Keyframe<V> {
     in_tan?: Iterable<number>;
     out_tan?: Iterable<number>;
 }
 
-export class PositionProperty extends Vector3Property<PositionKeyframe<Vector3>> {
+export class PositionProperty extends Vector3Property<
+    PositionKeyframe<Vector3>
+> {
     override lerp_keyframes(
         t: number,
         a: PositionKeyframe<Vector3>,
@@ -90,5 +93,4 @@ export class PositionProperty extends Vector3Property<PositionKeyframe<Vector3>>
     }
 
     _initial_value?: Vector3;
-
 }

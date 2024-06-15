@@ -1,10 +1,14 @@
+import { Track } from "./track";
+
 type EasingT = Iterable<number> | true;
+
 export type ExtraT = {
     start?: number;
     easing?: EasingT;
     add?: boolean;
     curve?: Iterable<number[]>;
 }
+
 export interface IProperty<V> {
     get_value(time: number): V;
     key_value(
@@ -22,7 +26,6 @@ export interface IProperty<V> {
 export interface Runnable {
     _start: number;
     _end: number;
-    // ready(parent: IParent): void;
     resolve(frame: number, base_frame: number, hint_dur: number): void;
     run(): void;
     get_active_dur(): number;
@@ -30,14 +33,7 @@ export interface Runnable {
 
 export interface IAction extends Runnable {
 
-    // ready(parent: IParent): void;
-}
 
-export interface IParent {
-    easing?: EasingT;
-    frame_rate: number;
-    to_frame(sec: number): number;
-    add_prop(prop: IProperty<any>): void;
 }
 
 export type ParamsT = {
@@ -46,16 +42,13 @@ export type ParamsT = {
     curve?: Iterable<number[]>;
 };
 
-export type RunGiver = (that: IParent) => Runnable;
+export type RunGiver = (that: Track) => Runnable;
 
 export class Action implements IAction {
     _start: number = -Infinity;
     _end: number = -Infinity;
     _dur?: number;
     /* c8 ignore start */
-    ready(parent: IParent): void {
-        throw new Error("Not implemented");
-    }
     run(): void {
         throw new Error("Not implemented");
     }
@@ -80,10 +73,10 @@ export abstract class Actions implements IAction {
     _easing?: EasingT;
     _runs: Array<Runnable>;
 
-    constructor(parent: IParent, runs: Runnable[], { easing, hint_dur }: ActionsParams = {}) {
+    constructor(track: Track, runs: Runnable[], { easing, hint_dur }: ActionsParams = {}) {
         this._runs = runs;
         easing == undefined || (this._easing = easing);
-        hint_dur == undefined || (this._hint_dur = parent.to_frame(hint_dur));
+        hint_dur == undefined || (this._hint_dur = track.to_frame(hint_dur));
     }
 
     run() {
@@ -112,11 +105,11 @@ export class SeqA extends Actions {
     _delay?: number;
     _stagger?: number;
 
-    constructor(parent: IParent, runs: Runnable[], params: SeqParams = {}) {
-        super(parent, runs, params);
+    constructor(track: Track, runs: Runnable[], params: SeqParams = {}) {
+        super(track, runs, params);
         const { delay, stagger } = params;
-        delay && (this._delay = parent.to_frame(delay));
-        stagger && (this._stagger = parent.to_frame(stagger));
+        delay && (this._delay = track.to_frame(delay));
+        stagger && (this._stagger = track.to_frame(stagger));
     }
 
     resolve(frame: number, base_frame: number, hint_dur: number) {
@@ -158,7 +151,7 @@ export function Seq(items: Array<RunGiver>, params?: SeqParams) {
             throw new Error(`Unexpected`);
         }
     }
-    return function (track: IParent) {
+    return function (track: Track) {
         return new SeqA(track, items.map(giver => giver(track)), params);
     }
 }
@@ -213,7 +206,7 @@ export function Par(items: Array<RunGiver>, params?: ActionsParams): RunGiver {
             throw new Error(`Unexpected`);
         }
     }
-    return function (track: IParent) {
+    return function (track: Track) {
         return new ParA(track, items.map(giver => giver(track)), params);
     }
 }
@@ -229,7 +222,7 @@ export function ParE(items: Array<RunGiver>, params?: ActionsParams): RunGiver {
             throw new Error(`Unexpected`);
         }
     }
-    return function (track: IParent) {
+    return function (track: Track) {
         const x = new ParA(track, items.map(giver => giver(track)), params);
         x._tail = true;
         return x;
@@ -246,7 +239,7 @@ export type Params2 = {
 
 export class ToA extends Action {
     _first: Params2;
-    constructor(parent: IParent, props: IProperty<any>[] | IProperty<any>, value: any, params?: ParamsT) {
+    constructor(track: Track, props: IProperty<any>[] | IProperty<any>, value: any, params?: ParamsT) {
         super();
         let { dur, ...extra } = params ?? {};
         {
@@ -256,11 +249,11 @@ export class ToA extends Action {
             });
             this._first = m.at(0)!;
         }
-        dur == undefined || (this._dur = parent.to_frame(dur));
+        dur == undefined || (this._dur = track.to_frame(dur));
         for (let cur: Params2 | undefined = this._first; cur; cur = cur._next) {
             const { property, extra } = cur;
-            extra.easing ?? (extra.easing = parent.easing);
-            parent.add_prop(property);
+            extra.easing ?? (extra.easing = track.easing);
+            track.add_prop(property);
         }
     }
     run(): void {
@@ -273,9 +266,9 @@ export class ToA extends Action {
 }
 
 export class PassA extends Action {
-    constructor(parent: IParent, dur?: number) {
+    constructor(track: Track, dur?: number) {
         super();
-        dur == undefined || (this._dur = parent.to_frame(dur));
+        dur == undefined || (this._dur = track.to_frame(dur));
     }
     run(): void {
 
@@ -283,8 +276,8 @@ export class PassA extends Action {
 }
 
 export class AddA extends ToA {
-    constructor(parent: IParent, props: IProperty<any>[] | IProperty<any>, value: any, params?: ParamsT) {
-        super(parent, props, value, params);
+    constructor(track: Track, props: IProperty<any>[] | IProperty<any>, value: any, params?: ParamsT) {
+        super(track, props, value, params);
         for (let cur: Params2 | undefined = this._first; cur; cur = cur._next) {
             cur.extra.add = true;
         }
@@ -304,7 +297,7 @@ export function To(
     value: any,
     params?: ParamsT,
 ): RunGiver {
-    return function (track: IParent) {
+    return function (track: Track) {
         return new ToA(track, props, value, params);
     }
 }
@@ -314,13 +307,13 @@ export function Add(
     value: any,
     params?: ParamsT
 ): RunGiver {
-    return function (track: IParent) {
+    return function (track: Track) {
         return new AddA(track, props, value, params);
     }
 }
 
 export function Pass(dur?: number): RunGiver {
-    return function (track: IParent) {
+    return function (track: Track) {
         return new PassA(track, dur);
     }
 }

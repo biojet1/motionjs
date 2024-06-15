@@ -23,8 +23,8 @@ export class Track {
         this.frame = this.to_frame(sec)
         return this;
     }
-    feed(cur: RunGiver) {
-        const d = feed(this, cur(this), this.frame, this.frame);
+    feed(cur: IAction) {
+        const d = feed(this, cur, this.frame, this.frame);
         this.frame += d;
         return this;
     }

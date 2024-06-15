@@ -33,7 +33,7 @@ test.test("Easing", (t) => {
     tr.frame_rate = 10;
     tr.hint_dur = 10;
     tr.easing = Easing.outback;
-    tr.feed(To(a, 10000));
+    tr.run(To(a, 10000));
     // console.log(cata(a, 0, 10).map(v => Math.round(v)));
     t.same(
         cata(a, 0, 11).map((v) => Math.round(v)),

@@ -1,14 +1,14 @@
-import { Action, ExtraT, IParent, IProperty, RunGiver } from "./action.js";
+import { Action, ExtraT, IProperty, RunGiver } from "./action.js";
+import { Track } from "./track.js";
 
 
 type Entry = {
-    _offset_sec: number;
-    _offset_frames: number;
+    _offset: number;
     end: number;
     value: any;
     extra: ExtraT;
     _: string;
-    _next?: Entry;
+    // _next?: Entry;
 };
 
 type Entry2 = {
@@ -28,13 +28,12 @@ function list_props(x: IProperty<any>[] | IProperty<any>) {
 
 class RelA extends Action {
     map: Map<IProperty<any>, Entry[]>;
-    constructor(parent: IParent, map: Map<IProperty<any>, Entry[]>) {
+    constructor(track: Track, map: Map<IProperty<any>, Entry[]>, dur: number) {
         super();
         this.map = map;
-        for (const v of this.map.values()) {
-            for (const e of v) {
-                e._offset_frames = parent.to_frame(e._offset_sec);
-            }
+        this._dur = track.to_frame(dur);
+        for (const [k, v] of this.map.entries()) {
+            track.add_prop(k);
         }
     }
 
@@ -42,16 +41,19 @@ class RelA extends Action {
         for (const v of this.map.values()) {
             let prev: Entry | undefined = undefined;
             for (const e of v) {
-                e.end = frame + e._offset_frames;
+                e.end = frame + e._offset;
                 if (!prev) {
-                    if (e._offset_frames > 0) {
-                        e.extra.easing = true;
+                    if (e._offset > 0) {
+                        // e.extra.easing = true;
                         e.extra.start = frame;
                     }
                 }
                 prev = e;
             }
         }
+        this._start = frame;
+        this._end = frame + (this._dur ?? NaN);
+
     }
     override run() {
         for (const [k, v] of this.map.entries()) {
@@ -59,19 +61,15 @@ class RelA extends Action {
                 k.key_value(e.end, e.value, e.extra);
             }
         }
-        this.map.clear();
+        // this.map.clear();
     }
 }
 
-export function Rel(t: string | number) {
-    return Rel.at(t);
-}
-
-Rel.at = function (t: string | number): RunGiver {
+export function Rel(t: string | number): RunGiver {
     const map2 = new Map<string | number, Entry2[]>();
     let cur: Entry2[];
     map2.set(t, cur = []);
-    function fn(track: IParent) {
+    function fn(track: Track) {
         let dur = -Infinity;
         const map = new Map<IProperty<any>, Entry[]>();
         if (dur <= 0) {
@@ -98,12 +96,8 @@ Rel.at = function (t: string | number): RunGiver {
             let sec;
             if (typeof time == 'string') {
                 const cen = parseFloat(time);
-                if (!Number.isFinite(cen)) {
-                    throw new Error(`Invalid time %: '${time}'`);
-                } else if (cen < 0 || cen > 100) {
+                if (cen < 0 || cen > 100) {
                     throw new Error(`Unexpected time % 0-100: '${time}'`);
-                } else if (dur == undefined) {
-                    throw new Error(`time % needs duration: '${time}'`);
                 }
                 sec = dur * cen / 100;
             } else {
@@ -122,7 +116,7 @@ Rel.at = function (t: string | number): RunGiver {
                         (a = map.get(p)) ?? map.set(p, a = []);
 
                         a.push({
-                            _offset_sec: sec, _: e._, _offset_frames: NaN, end: NaN, value:
+                            _: e._, _offset: track.to_frame(sec), end: NaN, value:
                                 p.check_value(e.value), extra: { ...e.extra }
                         })
                     }
@@ -130,10 +124,10 @@ Rel.at = function (t: string | number): RunGiver {
             }
         }
         for (const [, v] of map.entries()) {
-            v.sort((a, b) => a._offset_sec - b._offset_sec)
+            v.sort((a, b) => a._offset - b._offset)
         }
 
-        return new RelA(track, map);
+        return new RelA(track, map, dur);
     }
     fn.at = function (t: string | number) {
         const x = map2.get(t);

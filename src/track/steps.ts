@@ -1,4 +1,5 @@
-import { Action, IProperty, IParent } from "./action.js";
+import { Action, IProperty } from "./action.js";
+import { Track } from "./track.js";
 
 export interface Entry {
     t: number; // offset in seconds
@@ -112,7 +113,7 @@ export class StepA extends Action {
     _vars: PropMap;
     _kf_map?: KFMap;
     constructor(
-        parent: IParent,
+        track: Track,
         steps: Array<UserEntry>,
         vars: PropMap,
         { dur, easing, bounce, repeat, max_dur }: Params
@@ -121,16 +122,16 @@ export class StepA extends Action {
         this._steps = steps;
         this._vars = vars;
         this._base_frame = Infinity;
-        this._dur = dur == undefined ? undefined : parent.to_frame(dur);
+        this._dur = dur == undefined ? undefined : track.to_frame(dur);
         this._max_dur =
-            max_dur == undefined ? undefined : parent.to_frame(max_dur);
+            max_dur == undefined ? undefined : track.to_frame(max_dur);
         if (repeat) {
             this._repeat = repeat;
         }
         if (bounce) {
             this._bounce = bounce;
         }
-        easing = this._easing ?? easing ?? parent.easing;
+        easing = this._easing ?? easing ?? track.easing;
 
         // collect names, parse inputs
         const names: Array<string> = [];
@@ -144,7 +145,7 @@ export class StepA extends Action {
                 switch (k) {
                     case "dur":
                     case "t":
-                        e[k] = parent.to_frame(v);
+                        e[k] = track.to_frame(v);
                         continue;
                     case "easing":
                     case "curve":
@@ -165,10 +166,10 @@ export class StepA extends Action {
             } else {
                 if (Array.isArray(prop)) {
                     for (const x of prop) {
-                        parent.add_prop(x);
+                        track.add_prop(x);
                     }
                 } else {
-                    parent.add_prop(prop);
+                    track.add_prop(prop);
                 }
             }
         }
@@ -420,7 +421,7 @@ function* enum_props(vars: PropMap, name: string) {
 }
 
 export function Step(steps: Array<UserEntry>, vars: PropMap, params: Params = {}) {
-    return (track: IParent) => new StepA(track, steps, vars, params);
+    return (track: Track) => new StepA(track, steps, vars, params);
 
 }
 

@@ -7,9 +7,13 @@ import { ParametricGeometry } from "three/addons/geometries/ParametricGeometry.j
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls";
 import * as m3 from "3motion";
-import { To, Seq, Step, Add } from "3motion";
+import { To, Seq, Step, Rel, Add } from "3motion";
+import CameraControls from 'camera-controls';
+
 
 function main(renderer) {
+
+
     const fov = 40;
     const aspect = 640 / 360; //
     const near = 0.1;
@@ -19,6 +23,9 @@ function main(renderer) {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xaaaaaa);
+
+
+
 
     {
         const color = 0xffffff;
@@ -226,18 +233,18 @@ function main(renderer) {
     })();
 
 
+    const plane = (() => {
 
-    {
         const width = 9;
         const height = 9;
         const widthSegments = 2;
         const heightSegments = 2;
-        addSolidGeometry(
+        return addSolidGeometry(
             -2,
             0,
             new THREE.PlaneGeometry(width, height, widthSegments, heightSegments)
         );
-    }
+    })();
 
     {
         const verticesOfCube = [
@@ -473,13 +480,13 @@ function main(renderer) {
     const p3 = new m3.PositionProperty(klein, "position");
     const r3 = new m3.NumericProperty(klein.rotation, "x");
     // klein
-    console.log(klein.position);
-    console.log(p3.initial_value());
+    // console.log(klein.position);
+    // console.log(p3.initial_value());
     root.track(0).run(Add(p3, [15, -5, 50], { dur: 2, curve: [[20, -100, 4], [-15, 40, 1]] }));
     root.track(0).run(To(r3, 3, { dur: 2 }));
 
     const { Easing } = m3;
-    console.log(p3);
+    // console.log(p3);
     p3.repeat(2, true);
     root.track(0).run(
         m3.Step(
@@ -515,7 +522,29 @@ function main(renderer) {
         tr1.run(Par([To([r3], 3), To([r2], 3), To([r1], 3)]));
         tr1.run(Seq([To([r3], 0), To([r2], 0), To([r1], 0)], { stagger: 0.5 }));
     }
+    {
+        const pos = new m3.PositionProperty(exct, "position");
+        const rx = new m3.NumericProperty(exct.rotation, "x");
+        const tr1 = root.track(0);
+        console.log("TR", tr1.frame);
+        tr1.run(Rel(3).to(pos, [-1, 2, 3])
+            .at(1).to([pos], [-3, -2, -1])
+            .at('66%').to([pos], [0, 0, 0]).add(rx, 1)
+            .at('33%').add(rx, -2, { easing: Easing.inback })
+            .at('90%').to(rx, 0, { easing: Easing.inoutexpo })
+        );
+        console.log("TR", tr1.frame);
+        pos.repeat(-1, true);
+        rx.repeat(-1, true);
+        // tr1.run(To(pos, [1, 2, 3]));
+        // pos.set_value(new THREE.Vector3(1, 2, 3));
+        // root.track(0).run(To(pos, [2, 2, 2]))
+        // console.log(...pos.enum_values(0, 1.5 * 60));
+        // pos.set_value(new THREE.Vector3(-2, -2, 2));
+    }
     wid.repeat(-1, true);
+
+
     return [root, scene, camera];
 }
 
@@ -534,18 +563,24 @@ function web() {
     const [start, end] = root.calc_time_range();
     const { frame_rate: fps } = root;
     globalThis.cam = camera;
+
+    let clock = new THREE.Clock();
+    CameraControls.install({ THREE: THREE });
+    let cameraControls = new CameraControls(camera, canvas);
+
     m3.animate({
         fps,
         start,
         end,
         update: function (f) {
             // console.log(`f:${f} ${iro1.get_value(200).getHexString()}`);
+            // const delta = clock.getDelta();
 
             // cuber.owner[cuber.name] = cuber.get_value(f);
             // camZ.owner[camZ.name] = camZ.get_value(f);
             // iro1.owner[iro1.name] = iro1.get_value(f);
             root.update(f);
-
+            const hasControlsUpdated = cameraControls.update(f);
             // renderer.clear();
             renderer.render(scene, camera);
         },
