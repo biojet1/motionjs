@@ -31,7 +31,16 @@ export class Animated<V, K extends Keyframe<V> = Keyframe<V>> {
     load_value(_a: any): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
     }
+    // should be static
     initial_value(): V {
+        throw Error(`Not implemented by '${this.constructor.name}'`);
+    }
+    //
+    update(frame: number): any {
+        this.update_value(frame);
+    }
+    //
+    update_value(frame: number): any {
         throw Error(`Not implemented by '${this.constructor.name}'`);
     }
     /* c8 ignore stop */
@@ -215,4 +224,41 @@ export class Animated<V, K extends Keyframe<V> = Keyframe<V>> {
         delete this["_end"];
         return this;
     }
+    updater(): Updater {
+        const { kfs } = this;
+        const first = kfs.at(0);
+        if (first) {
+            const last = kfs.at(-1);
+            if (last) {
+                let { _repeat_count, _bounce } = this;
+                const start = first.time;
+                const end = last.time;
+                const fof = iter_frame_fun(
+                    start,
+                    end,
+                    _repeat_count,
+                    _bounce,
+                    this
+                );
+                return {
+                    start, end, update: (frame: number) => {
+                        this.update_value(fof(frame));
+                    }
+                }
+            }
+        }
+        /* c8 ignore start */
+        throw Error(`Unexpected by '${this.constructor.name}'`);
+        /* c8 ignore stop */
+    }
+
 }
+export interface Updater {
+    start: number;
+    end: number;
+    update(frame: number): any;
+}
+export interface Updateable {
+    updater(): Updater;
+}
+

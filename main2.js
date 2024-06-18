@@ -560,13 +560,18 @@ function web() {
         controls.enableDamping = true;
         controls.enablePan = false;
     }
-    const [start, end] = root.calc_time_range();
+    const upd = root.updater();
+    // const [start, end] = root.frame_range();
+    const { start, end } = upd;
     const { frame_rate: fps } = root;
     globalThis.cam = camera;
 
     let clock = new THREE.Clock();
     CameraControls.install({ THREE: THREE });
     let cameraControls = new CameraControls(camera, canvas);
+    if (end <= start) {
+        throw RangeError(`${start} => ${end}`);
+    }
 
     m3.animate({
         fps,
@@ -579,7 +584,8 @@ function web() {
             // cuber.owner[cuber.name] = cuber.get_value(f);
             // camZ.owner[camZ.name] = camZ.get_value(f);
             // iro1.owner[iro1.name] = iro1.get_value(f);
-            root.update(f);
+            // root.update(f);
+            upd.update(f);
             const hasControlsUpdated = cameraControls.update(f);
             // renderer.clear();
             renderer.render(scene, camera);

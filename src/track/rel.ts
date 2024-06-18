@@ -1,4 +1,5 @@
-import { Action, ExtraT, IProperty, RunGiver } from "./action.js";
+import { KeyExtra } from "../keyframe/keyframe.js";
+import { Action, IProperty, RunGiver } from "./action.js";
 import { Track } from "./track.js";
 
 
@@ -6,7 +7,7 @@ type Entry = {
     _offset: number;
     end: number;
     value: any;
-    extra: ExtraT;
+    extra: KeyExtra;
     _: string;
     // _next?: Entry;
 };
@@ -14,7 +15,7 @@ type Entry = {
 type Entry2 = {
     props: IProperty<any>[];
     value: any;
-    extra: ExtraT;
+    extra: KeyExtra;
     _: string;
 }
 
@@ -33,7 +34,7 @@ class RelA extends Action {
         this.map = map;
         this._dur = track.to_frame(dur);
         for (const [k, v] of this.map.entries()) {
-            track.add_prop(k);
+            track.add_update(k);
         }
     }
 
@@ -134,11 +135,11 @@ export function Rel(t: string | number): RunGiver {
         x ? (cur = x) : map2.set(t, (cur = []));
         return this;
     };
-    fn.to = function (props: IProperty<any>[] | IProperty<any>, value: any, extra: ExtraT = {}) {
+    fn.to = function (props: IProperty<any>[] | IProperty<any>, value: any, extra: KeyExtra = {}) {
         cur.push({ _: 'to', props: list_props(props), value, extra });
         return this;
     };
-    fn.add = function (props: IProperty<any>[] | IProperty<any>, value: any, extra: ExtraT = {}) {
+    fn.add = function (props: IProperty<any>[] | IProperty<any>, value: any, extra: KeyExtra = {}) {
         cur.push({ _: 'add', props: list_props(props), value, extra: { ...extra, add: true } });
         return this;
     };

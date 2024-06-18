@@ -1,6 +1,7 @@
 import { Property } from "./properties.js";
 import { IProperty } from "./track/action.js";
 import { Track } from "./track/track.js";
+import { Updateable } from "./keyframe/keyframe.js";
 
 export * from "./keyframe/keyframe.js";
 export * from "./track/index.js";
@@ -83,44 +84,9 @@ export function animate({
 
 // pause start end
 
-export class Root {
-    frame_rate: number = 60;
-    hint_dur: number = 60; // 1s * frame_rate
-    easing?: Iterable<number> | true;
-    properties = new Set<Property<any>>();
-
-    track(frame: number = 0) {
-        const tr = new Track();
-        tr.frame_rate = this.frame_rate;
-        tr.hint_dur = this.hint_dur;
-        tr.easing = this.easing;
-        tr.frame = frame;
-        tr.properties = this.properties;
-        return tr;
+export class Root extends Track {
+    constructor() {
+        super();
+        this.updates = new Set<Updateable>();
     }
-    update(frame: number = 0) {
-        for (const prop of this.properties) {
-            prop.update(frame);
-        }
-    }
-    calc_time_range() {
-        let max = 0;
-        let min = 0;
-
-        for (const prop of this.properties) {
-            const [S, E] = prop.frame_range();
-            if (Number.isFinite(E)) {
-                if (E > max) {
-                    max = E;
-                }
-            }
-            if (S < min) {
-                min = S;
-            }
-        }
-
-        return [min, max];
-    }
-
-    // throw Error(`Unexpected by '${this.constructor.name}'`);
 }

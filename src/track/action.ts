@@ -1,27 +1,9 @@
+import { Animated, KeyExtra } from "../keyframe/keyframe";
 import { Track } from "./track";
 
 type EasingT = Iterable<number> | true;
 
-export type ExtraT = {
-    start?: number;
-    easing?: EasingT;
-    add?: boolean;
-    curve?: Iterable<number[]>;
-}
-
-export interface IProperty<V> {
-    get_value(time: number): V;
-    key_value(
-        time: number,
-        value: V,
-        extra?: ExtraT,
-    ): any;
-    check_value(x: any): V;
-    add_value(a: V, b: V): V;
-    initial_value(): V;
-    hold_last_value(frame: number): any;
-}
-
+export type IProperty<V> = Animated<V>
 
 export interface Runnable {
     _start: number;
@@ -233,7 +215,7 @@ export type Params2 = {
     property: IProperty<any>;
     value: any;
     add: boolean;
-    extra: ExtraT;
+    extra: KeyExtra;
     _next?: Params2
 };
 
@@ -253,7 +235,7 @@ export class ToA extends Action {
         for (let cur: Params2 | undefined = this._first; cur; cur = cur._next) {
             const { property, extra } = cur;
             extra.easing ?? (extra.easing = track.easing);
-            track.add_prop(property);
+            track.add_update(property);
         }
     }
     run(): void {

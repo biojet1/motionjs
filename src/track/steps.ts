@@ -166,10 +166,10 @@ export class StepA extends Action {
             } else {
                 if (Array.isArray(prop)) {
                     for (const x of prop) {
-                        track.add_prop(x);
+                        track.add_update(x);
                     }
                 } else {
-                    track.add_prop(prop);
+                    track.add_update(prop);
                 }
             }
         }

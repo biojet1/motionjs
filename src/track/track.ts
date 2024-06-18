@@ -1,14 +1,16 @@
-import { IAction, Action, IProperty, Actions, RunGiver } from "./action.js";
+import { Updateable, Updater } from "../keyframe/keyframe.js";
+import { IAction, RunGiver } from "./action.js";
 import { PropMap, Step, UserEntry } from "./steps.js";
 
-export class Track {
+export class Track implements Updateable {
     frame: number = 0;
     frame_rate: number = 60;
     hint_dur: number = 60; // 1s * frame_rate
     easing?: Iterable<number> | true;
-    properties?: Set<IProperty<any>>;
-    add_prop(prop: IProperty<any>) {
-        this.properties?.add(prop);
+    updates?: Set<Updateable>;
+
+    add_update(up: Updateable) {
+        this.updates?.add(up);
     }
     to_frame(sec: number) {
         return Math.round(this.frame_rate * sec);
@@ -54,12 +56,40 @@ export class Track {
         tr.hint_dur = this.hint_dur;
         tr.easing = this.easing;
         tr.frame = this.frame;
-        tr.properties = this.properties;
+        tr.updates = this.updates;
         return tr;
     }
     pass(sec: number) {
         this.frame += this.to_frame(sec);
         return this;
+    }
+
+    updater(): Updater {
+        let ups: Updater[] = [];
+        let end = -1;
+        let start = -1;
+        if ((this.updates?.size ?? 0) <= 0) {
+            throw Error(`No updatables`);
+        }
+
+        for (const cur of (this.updates ?? [])) {
+            const up = cur.updater();
+            const { start: S, end: E } = up;
+            if (isFinite(E) && E > end) {
+                end = E;
+            }
+            if (S < start) {
+                start = S;
+            }
+            ups.push(up);
+        }
+        return {
+            start, end, update(frame: number) {
+                for (const up of ups) {
+                    up.update(frame);
+                }
+            }
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-import { Animated } from "./keyframe/keyframe.js";
+import { Animated, Updater } from "./keyframe/keyframe.js";
 import { Keyframe, iter_frame_fun, ratio_at } from "./keyframe/kfhelper.js";
 
 export class Property<V, K extends Keyframe<V> = Keyframe<V>> extends Animated<V, K> {
@@ -10,7 +10,7 @@ export class Property<V, K extends Keyframe<V> = Keyframe<V>> extends Animated<V
         this.name = name;
     }
 
-    update(frame: number = 0) {
+    update_value(frame: number = 0) {
         this.set_value(this.get_value(frame));
     }
     set_value(v: V) {
