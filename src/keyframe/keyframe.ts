@@ -31,6 +31,9 @@ export class Animated<V, K extends Keyframe<V> = Keyframe<V>> {
     load_value(_a: any): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
     }
+    // static load_value_2(_a: any): V {
+    //     throw Error(`Not implemented by '${this.constructor.name}'`);
+    // }
     // should be static
     initial_value(): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
@@ -241,7 +244,7 @@ export class Animated<V, K extends Keyframe<V> = Keyframe<V>> {
                     this
                 );
                 return {
-                    start, end, update: (frame: number) => {
+                    start: this._start!, end: this._end!, update: (frame: number) => {
                         this.update_value(fof(frame));
                     }
                 }

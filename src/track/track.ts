@@ -1,5 +1,5 @@
 import { Updateable, Updater } from "../keyframe/keyframe.js";
-import { IAction, RunGiver } from "./action.js";
+import { IAction, RunGiver, Runnable } from "./action.js";
 import { PropMap, Step, UserEntry } from "./steps.js";
 
 export class Track implements Updateable {
@@ -57,6 +57,7 @@ export class Track implements Updateable {
         tr.easing = this.easing;
         tr.frame = this.frame;
         tr.updates = this.updates;
+        // tr.in_frame = tr.out_frame = this.out_frame;
         return tr;
     }
     pass(sec: number) {
@@ -71,7 +72,6 @@ export class Track implements Updateable {
         if ((this.updates?.size ?? 0) <= 0) {
             throw Error(`No updatables`);
         }
-
         for (const cur of (this.updates ?? [])) {
             const up = cur.updater();
             const { start: S, end: E } = up;
@@ -85,8 +85,67 @@ export class Track implements Updateable {
         }
         return {
             start, end, update(frame: number) {
+                // this.start + (frame - _start)
                 for (const up of ups) {
+                    const { start: s, end: e } = up;
+                    if (frame < s || frame >= e) {
+                        continue;
+                    }
                     up.update(frame);
+                }
+            }
+        }
+    }
+    give(): RunGiver {
+        const self = this;
+        return (track: Track) => {
+            let ups: Updater[] = [];
+            if ((self.updates?.size ?? 0) <= 0) {
+                throw Error(`No updatables`);
+            }
+            let local_end = -1;
+            let local_start = -1;
+            for (const cur of (this.updates ?? [])) {
+                const up = cur.updater();
+                const { start: S, end: E } = up;
+                if (isFinite(E) && E > local_end) {
+                    local_end = E;
+                }
+                if (S < local_start) {
+                    local_start = S;
+                }
+                ups.push(up);
+            }
+            return {
+                _start: 0,
+                _end: 0,
+                resolve(frame: number, base_frame: number, hint_dur: number): void {
+                    this._start = frame;
+                    this._end = frame + (local_end - local_start);
+                },
+                run(): void {
+                    const start = this._start;
+                    const end = this._end;
+                    track.add_update({
+                        updater() {
+                            return {
+                                start, end,
+                                update(frame: number) {
+                                    const off = local_start + (frame - start);
+                                    for (const up of ups) {
+                                        const { start: s, end: e } = up;
+                                        if (off < s || off >= e) {
+                                            continue;
+                                        }
+                                        up.update(off);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+                get_active_dur(): number {
+                    return this._end - this._start
                 }
             }
         }
