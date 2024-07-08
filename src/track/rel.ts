@@ -1,147 +1,220 @@
 import { KeyExtra } from "../keyframe/keyframe.js";
-import { Action, IProperty, RunGiver } from "./action.js";
+import { IProperty, Proxy } from "./action.js";
 import { Track } from "./track.js";
 
-
-type Entry = {
-    _offset: number;
-    end: number;
-    value: any;
+class RelOp {
     extra: KeyExtra;
-    _: string;
-    // _next?: Entry;
-};
+    constructor(extra: KeyExtra) {
+        this.extra = extra;
+    }
+    apply(k: IProperty<any>, e: RelEntry2, i: number, a: RelEntry2[]) {
+        throw new Error(`Not implemented`);
+    }
+}
+class RelInit extends RelOp {
 
-type Entry2 = {
-    props: IProperty<any>[];
-    value: any;
-    extra: KeyExtra;
-    _: string;
+
+    override apply(k: IProperty<any>, e: RelEntry2, i: number, a: RelEntry2[]) {
+        k.key_value(e.end, k.initial_value(), this.extra);
+    }
 }
 
+class RelTo extends RelOp {
+    value: any;
+    constructor(value: any, extra: KeyExtra) {
+        super(extra);
+        this.value = value;
+    }
+    override apply(k: IProperty<any>, e: RelEntry2, i: number, a: RelEntry2[]) {
+        let { extra } = this
+        if (i == 0 && e.offset > 0) {
+            extra = { ...extra, start: e.start }
+        }
+        k.key_value(e.end, this.value, extra);
+    }
+}
+
+class RelAdd extends RelTo {
+    constructor(value: any, extra: KeyExtra) {
+        super(value, extra);
+        this.extra.add = true;
+    }
+}
+
+type RelEntry = {
+    props: IProperty<any>[];
+    op: RelOp;
+};
+
+type RelEntry2 = {
+    offset: number;
+    end: number;
+    start: number;
+    op: RelOp;
+};
+
+export function Rel(t: string | number): Proxy {
+    const map2 = new Map<string | number, RelEntry[]>();
+    let cur: RelEntry[] = [];
+
+    function fn(track: Track) {
+        let t_max = -Infinity;
+        const map = new Map<IProperty<any>, RelEntry2[]>();
+        for (const [time, _] of map2.entries()) {
+            // console.log('time', time, time.endsWith('%'));
+            if (typeof time == "number") {
+                if (!Number.isFinite(time)) {
+                    throw new Error(`Invalid time: ${time}`);
+                } else if (time < 0) {
+                    continue;
+                } else {
+                    t_max = Math.max(t_max, time);
+                }
+            }
+        }
+        // console.log("map2", map2);
+        if (t_max <= 0) {
+            // console.log(map2);
+            throw new Error(`Invalid duration: ${t_max}`);
+        }
+        const frames = track.to_frame(t_max);
+        for (const [time, entries] of map2.entries()) {
+            let sec: number;
+            if (typeof time == "number") {
+                if (time < 0) {
+                    sec = t_max + time;
+                } else {
+                    sec = time;
+                }
+            } else {
+                const n = parseFloat(time.slice(0, -1));
+                if (n < 0 || n > 100 || !time.endsWith("%")) {
+                    throw new Error(`Invalid percent "${time}" (n=${n})`);
+                }
+                sec = (t_max * n) / 100.0;
+            }
+            if (sec < 0 || sec > t_max) {
+                throw new Error(`Unexpected`);
+            }
+            const frame = track.to_frame(sec);
+            for (const { op, props } of entries) {
+                // map
+
+                for (const p of props) {
+                    let a: RelEntry2[] | undefined;
+                    (a = map.get(p)) ?? map.set(p, (a = []));
+                    if (!op.extra.easing) {
+                        op.extra.easing = track.easing
+                    }
+
+                    a.push({ offset: frame, end: NaN, start: NaN, op });
+                }
+            }
+        }
+        for (const [, v] of map.entries()) {
+            v.sort((a, b) => a.offset - b.offset);
+        }
+        // console.log("rel map", map);
+        function sup(that: Track) {
+            for (const [k, v] of map.entries()) {
+                v.forEach((e, i, a) => {
+                    e.op.apply(k, e, i, a);
+                });
+                track.add_update(k);
+            }
+        }
+        sup.start = -Infinity;
+        sup.end = -Infinity;
+
+        return function (frame: number, base_frame: number, hint_dur: number) {
+            for (const v of map.values()) {
+                for (const e of v) {
+                    e.end = frame + e.offset;
+                    e.start = frame;
+                }
+            }
+            sup.start = frame;
+            sup.end = frame + frames;
+            // console.log("rel res", map);
+            return sup;
+        };
+    }
+    fn.t = function (t: number) {
+        if (t >= 0) {
+            this.last_t = t;
+        } else {
+            throw new Error(`Unexpected t=${t}`);
+        }
+        const x = map2.get(t);
+        x ? (cur = x) : map2.set(t, (cur = []));
+        return this;
+    };
+    fn.d = function (d: number) {
+        const t = this.last_t;
+        if (isNaN(t)) {
+            throw new Error(`set 't' first `);
+        } else {
+            d = t + d;
+        }
+        if (d < 0) {
+            throw new Error(`d<0`);
+        }
+        return this.t(d);
+    };
+    fn.p = function (p: number) {
+        const c = p < 0 ? -p : p;
+        if (c > 100 || c < 0) {
+            throw new Error(`p 0-100`);
+        } else if (p < 0) {
+            p = 100 + p;
+        }
+        const k = `${p}%`;
+        const x = map2.get(k);
+        x ? (cur = x) : map2.set(k, (cur = []));
+        return this;
+    };
+    fn.at = function (o: number | string) {
+        if (typeof o == "number") {
+            return this.t(o);
+        } else if (o.endsWith("%")) {
+            return this.p(parseFloat(o.slice(0, -1)));
+        } else if (o.startsWith("+") || o.startsWith("-")) {
+            return this.d(parseFloat(o));
+        } else {
+            throw new Error(`Invalid "${o}"`);
+        }
+    };
+    fn.to = function (
+        props: IProperty<any>[] | IProperty<any>,
+        value: any,
+        extra: KeyExtra = {}
+    ) {
+        cur.push({ props: list_props(props), op: new RelTo(value, extra) });
+        return this;
+    };
+    fn.add = function (
+        props: IProperty<any>[] | IProperty<any>,
+        value: any,
+        extra: KeyExtra = {}
+    ) {
+        cur.push({ props: list_props(props), op: new RelAdd(value, extra) });
+        return this;
+    };
+    fn.initial = function (
+        props: IProperty<any>[] | IProperty<any>,
+        extra: KeyExtra = {}
+    ) {
+        cur.push({ props: list_props(props), op: new RelInit(extra) });
+        return this;
+    };
+    fn.last_t = NaN;
+    fn.at(t);
+    return fn;
+}
 function list_props(x: IProperty<any>[] | IProperty<any>) {
     if (Array.isArray(x)) {
         return x;
     } else {
         return [x];
     }
-}
-
-class RelA extends Action {
-    map: Map<IProperty<any>, Entry[]>;
-    constructor(track: Track, map: Map<IProperty<any>, Entry[]>, dur: number) {
-        super();
-        this.map = map;
-        this._dur = track.to_frame(dur);
-        for (const [k, v] of this.map.entries()) {
-            track.add_update(k);
-        }
-    }
-
-    override resolve(frame: number, base_frame: number, hint_dur: number): void {
-        for (const v of this.map.values()) {
-            let prev: Entry | undefined = undefined;
-            for (const e of v) {
-                e.end = frame + e._offset;
-                if (!prev) {
-                    if (e._offset > 0) {
-                        // e.extra.easing = true;
-                        e.extra.start = frame;
-                    }
-                }
-                prev = e;
-            }
-        }
-        this._start = frame;
-        this._end = frame + (this._dur ?? NaN);
-
-    }
-    override run() {
-        for (const [k, v] of this.map.entries()) {
-            for (const e of v) {
-                k.key_value(e.end, e.value, e.extra);
-            }
-        }
-        // this.map.clear();
-    }
-}
-
-export function Rel(t: string | number): RunGiver {
-    const map2 = new Map<string | number, Entry2[]>();
-    let cur: Entry2[];
-    map2.set(t, cur = []);
-    function fn(track: Track) {
-        let dur = -Infinity;
-        const map = new Map<IProperty<any>, Entry[]>();
-        if (dur <= 0) {
-            for (const [time, _entries] of map2.entries()) {
-                // console.log('time', time, time.endsWith('%'));
-                if (typeof time == 'number') {
-                    const sec = time;
-                    if (!Number.isFinite(sec)) {
-                        throw new Error(`Invalid time: ${time}`);
-                    } else if (sec < 0) {
-                        continue;
-                    } else {
-                        dur = Math.max(dur, sec);
-                    }
-                }
-            }
-            if (dur <= 0) {
-                // console.log(map2);
-                throw new Error(`Invalid duration: ${dur}`);
-            }
-        }
-
-        for (const [time, entries] of map2.entries()) {
-            let sec;
-            if (typeof time == 'string') {
-                const cen = parseFloat(time);
-                if (cen < 0 || cen > 100) {
-                    throw new Error(`Unexpected time % 0-100: '${time}'`);
-                }
-                sec = dur * cen / 100;
-            } else {
-                sec = (time);
-            }
-            if (sec < 0) {
-                sec = dur + sec;
-            }
-            if (sec < 0 || sec > dur) {
-                throw new Error(`time '${time}' out of range 0-${dur}`);
-            }
-            for (const e of entries) {
-                if (e._) {
-                    for (const p of e.props) {
-                        let a: Entry[] | undefined;
-                        (a = map.get(p)) ?? map.set(p, a = []);
-
-                        a.push({
-                            _: e._, _offset: track.to_frame(sec), end: NaN, value:
-                                p.check_value(e.value), extra: { ...e.extra }
-                        })
-                    }
-                }
-            }
-        }
-        for (const [, v] of map.entries()) {
-            v.sort((a, b) => a._offset - b._offset)
-        }
-
-        return new RelA(track, map, dur);
-    }
-    fn.at = function (t: string | number) {
-        const x = map2.get(t);
-        x ? (cur = x) : map2.set(t, (cur = []));
-        return this;
-    };
-    fn.to = function (props: IProperty<any>[] | IProperty<any>, value: any, extra: KeyExtra = {}) {
-        cur.push({ _: 'to', props: list_props(props), value, extra });
-        return this;
-    };
-    fn.add = function (props: IProperty<any>[] | IProperty<any>, value: any, extra: KeyExtra = {}) {
-        cur.push({ _: 'add', props: list_props(props), value, extra: { ...extra, add: true } });
-        return this;
-    };
-    return fn;
 }

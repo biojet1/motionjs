@@ -7,7 +7,7 @@ import { ParametricGeometry } from "three/addons/geometries/ParametricGeometry.j
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls";
 import * as m3 from "3motion";
-import { To, Seq, Step, Rel, Add } from "3motion";
+import { To, Seq, Rel, Add } from "3motion";
 import CameraControls from 'camera-controls';
 
 
@@ -447,28 +447,18 @@ function main(renderer) {
     const sbg = new m3.ColorProperty(scene, "background");
 
     root.track(0).run(
-        m3.Step(
-            [
-                { t: 0, iro1: "white" },
-                { dur: 2, iro1: "blue" },
-                { dur: 2, iro1: "red" },
-                { dur: 1, iro1: "green" },
-            ],
-            { iro1 }
-        )
+        Rel(0).to(iro1, "white")
+            .d(2).to(iro1, "blue")
+            .d(2).to(iro1, "red")
+            .d(1).to(iro1, "green")
     );
 
     root.track(0).run(
-        m3.Step(
-            [
-                { t: 0, sbg: "white" },
-                { dur: 2, sbg: "grey" },
-                { dur: 2, sbg: "wheat" },
-                { dur: 1, sbg: "slategrey" },
-                { dur: 1, sbg: "white" },
-            ],
-            { sbg }
-        )
+        Rel(0).to(sbg, "white")
+            .d(2).to(sbg, "grey")
+            .d(2).to(sbg, "wheat")
+            .d(1).to(sbg, "slategrey")
+            .d(1).to(sbg, "white")
     );
 
     // console.b
@@ -489,21 +479,26 @@ function main(renderer) {
     // console.log(p3);
     p3.repeat(2, true);
     root.track(0).run(
-        m3.Step(
-            [
-                { t: 0, wid: 1, ro1: 0, pox: m3.Step.initial },
-                { dur: 1, wid: 3, ro1: 1 },
-                {
-                    dur: 1,
-                    wid: 1,
-                    ro1: -1,
-                    easing: Easing.inoutexpo,
-                    pox: m3.Step.add(50),
-                },
-                { dur: 1, wid: 2, ro1: 2, easing: Easing.inoutsine, pox: m3.Step.first },
-            ],
-            { wid, ro1, pox: [pox, poz] }
-        )
+        Rel(0).to(wid, 1).to(ro1, 0).initial(pox)
+            .d(1).to(wid, 3).to(ro1, 1)
+            .d(1).to(wid, 1, { easing: Easing.inoutexpo }).to(ro1, -1, { easing: Easing.inoutexpo })
+            .add(pox, 50)
+            .d(1).to(wid, 2).to(ro1, 2).initial(pox)
+        // m3.Step(
+        //     [
+        //         { t: 0, wid: 1, ro1: 0, pox: m3.Step.initial },
+        //         { dur: 1, wid: 3, ro1: 1 },
+        //         {
+        //             dur: 1,
+        //             wid: 1,
+        //             ro1: -1,
+        //             easing: Easing.inoutexpo,
+        //             pox: m3.Step.add(50),
+        //         },
+        //         { dur: 1, wid: 2, ro1: 2, easing: Easing.inoutsine, pox: m3.Step.first },
+        //     ],
+        //     { wid, ro1, pox: [pox, poz] }
+        // )
     );
     {
         const { Par, Add } = m3;
