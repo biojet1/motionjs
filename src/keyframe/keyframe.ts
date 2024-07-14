@@ -1,3 +1,4 @@
+import { Stepper } from "../track/stepper.js";
 import { Keyframe, iter_frame_fun, ratio_at } from "./kfhelper.js";
 
 export type KeyExtra = {
@@ -31,9 +32,6 @@ export class Animated<V, K extends Keyframe<V> = Keyframe<V>> {
     load_value(_a: any): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
     }
-    // static load_value_2(_a: any): V {
-    //     throw Error(`Not implemented by '${this.constructor.name}'`);
-    // }
     // should be static
     initial_value(): V {
         throw Error(`Not implemented by '${this.constructor.name}'`);
@@ -254,6 +252,21 @@ export class Animated<V, K extends Keyframe<V> = Keyframe<V>> {
         throw Error(`Unexpected by '${this.constructor.name}'`);
         /* c8 ignore stop */
     }
+    make_stepper<V>(step: (frame: number) => V) {
+        const { kfs } = this;
+        const first = kfs.at(0);
+        const last = kfs.at(-1);
+        if (first && last) {
+            return this.check_stepper(Stepper.create(step, first.time, last.time).clamp());
+        }
+        throw Error(`Unexpected by '${this.constructor.name}'`);
+    }
+    check_stepper<U>(stepper: Stepper<U>) {
+        return stepper;
+    }
+
+    // kfs = self.kfs
+    // return self.check_stepper(Stepper(fun, kfs[0].frame, kfs[-1].frame).clamp())
 
 }
 export interface Updater {

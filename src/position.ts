@@ -1,7 +1,7 @@
 import { Vector3 } from "three";
 import { Property } from "./properties.js";
-import { Keyframe, iter_frame_fun, ratio_at } from "./keyframe/kfhelper.js";
-import { cubic_point3d_at, cubic_point_at } from "./keyframe/bezier.js";
+import { Keyframe } from "./keyframe/kfhelper.js";
+import { cubic_point3d_at } from "./keyframe/bezier.js";
 import { KeyExtra } from "./keyframe/keyframe.js";
 
 export class Vector3Property<

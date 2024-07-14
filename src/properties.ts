@@ -1,5 +1,5 @@
-import { Animated, Updater } from "./keyframe/keyframe.js";
-import { Keyframe, iter_frame_fun, ratio_at } from "./keyframe/kfhelper.js";
+import { Animated } from "./keyframe/keyframe.js";
+import { Keyframe } from "./keyframe/kfhelper.js";
 
 export class Property<V, K extends Keyframe<V> = Keyframe<V>> extends Animated<V, K> {
     owner: any;
