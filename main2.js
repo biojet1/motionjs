@@ -477,7 +477,7 @@ function main(renderer) {
 
     const { Easing } = m3;
     // console.log(p3);
-    p3.repeat(2, true);
+    p3.check_stepper((s) => s.bounce(2));
     root.track(0).run(
         Rel(0).to(wid, 1).to(ro1, 0).initial(pox)
             .d(1).to(wid, 3).to(ro1, 1)
@@ -529,18 +529,18 @@ function main(renderer) {
             .at('90%').to(rx, 0, { easing: Easing.inoutexpo })
         );
         console.log("TR", tr1.frame);
-        pos.repeat(-1, true);
-        rx.repeat(-1, true);
+        pos.check_stepper((s) => s.bounce(Infinity));
+        rx.check_stepper((s) => s.bounce(Infinity));
         // tr1.run(To(pos, [1, 2, 3]));
         // pos.set_value(new THREE.Vector3(1, 2, 3));
         // root.track(0).run(To(pos, [2, 2, 2]))
         // console.log(...pos.enum_values(0, 1.5 * 60));
         // pos.set_value(new THREE.Vector3(-2, -2, 2));
     }
-    wid.repeat(-1, true);
+    wid.check_stepper((s) => s.bounce(Infinity));
 
 
-    return [root, scene, camera];
+    return { root, scene, camera };
 }
 
 function web() {
@@ -549,14 +549,14 @@ function web() {
     {
         renderer.setSize(640, 360);
     }
-    const [root, scene, camera] = main(renderer);
+    const { root, scene, camera } = main(renderer);
     {
         let controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.enablePan = false;
     }
-    const upd = root.updater();
-    // const [start, end] = root.frame_range();
+    const upd = root.stepper();
+
     const { start, end } = upd;
     const { frame_rate: fps } = root;
     globalThis.cam = camera;
@@ -580,7 +580,7 @@ function web() {
             // camZ.owner[camZ.name] = camZ.get_value(f);
             // iro1.owner[iro1.name] = iro1.get_value(f);
             // root.update(f);
-            upd.update(f);
+            upd.step(f);
             const hasControlsUpdated = cameraControls.update(f);
             // renderer.clear();
             renderer.render(scene, camera);

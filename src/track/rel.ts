@@ -118,7 +118,7 @@ export function Rel(t: string | number): Proxy {
         function sup(that: Track) {
             for (const [k, v] of map.entries()) {
                 v.forEach((e, i, a) => e.op.apply(k, e, i, a));
-                that.add_update(k);
+                that.supply(k);
             }
         }
         sup.start = -Infinity;

@@ -1,7 +1,5 @@
-import { Property } from "./properties.js";
-import { IProperty } from "./track/action.js";
+import { Steppable } from "./track/stepper.js";
 import { Track } from "./track/track.js";
-import { Updateable } from "./keyframe/keyframe.js";
 
 export * from "./keyframe/keyframe.js";
 export * from "./track/index.js";
@@ -87,6 +85,6 @@ export function animate({
 export class Root extends Track {
     constructor() {
         super();
-        this.updates = new Set<Updateable>();
+        this.steppers = new Set<Steppable>();
     }
 }

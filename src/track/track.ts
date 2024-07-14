@@ -1,16 +1,16 @@
-import { Updateable, Updater } from "../keyframe/keyframe.js";
 import { Proxy, Resolver } from "./action.js";
+import { Steppable, Stepper } from "./stepper.js";
 
 
-export class Track implements Updateable {
+export class Track implements Steppable {
     frame: number = 0;
     frame_rate: number = 60;
     hint_dur: number = 60; // 1s * frame_rate
     easing?: Iterable<number> | true;
-    updates?: Set<Updateable>;
+    steppers?: Set<Steppable>;
 
-    add_update(up: Updateable) {
-        this.updates?.add(up);
+    supply(up: Steppable) {
+        this.steppers?.add(up);
     }
     to_frame(sec: number) {
         return Math.round(this.frame_rate * sec);
@@ -55,7 +55,7 @@ export class Track implements Updateable {
         tr.hint_dur = this.hint_dur;
         tr.easing = this.easing;
         tr.frame = this.frame;
-        tr.updates = this.updates;
+        tr.steppers = this.steppers;
         // tr.in_frame = tr.out_frame = this.out_frame;
         return tr;
     }
@@ -63,121 +63,48 @@ export class Track implements Updateable {
         this.frame += this.to_frame(sec);
         return this;
     }
-
-    updater(): Updater {
-        let ups: Updater[] = [];
+    stepper(): Stepper {
+        const { steppers } = this;
+        if (!steppers || steppers.size <= 0) {
+            throw Error(`No steppers`);
+        }
         let end = -1;
         let start = -1;
-        if ((this.updates?.size ?? 0) <= 0) {
-            throw Error(`No updatables`);
-        }
-        for (const cur of this.updates ?? []) {
-            const up = cur.updater();
+        let steps: Stepper[] = [];
+        for (const cur of steppers) {
+            const up = cur.stepper();
             const { start: S, end: E } = up;
             if (isFinite(E) && E > end) {
                 end = E;
             }
-            if (S < start) {
+            if (isFinite(S) && S < start) {
                 start = S;
             }
-            ups.push(up);
+            steps.push(up);
         }
-        return {
-            start,
-            end,
-            update(frame: number) {
-                // this.start + (frame - _start)
-                for (const up of ups) {
-                    const { start: s, end: e } = up;
-                    if (frame < s || frame >= e) {
-                        continue;
-                    }
-                    up.update(frame);
+        return this.check_stepper(Stepper.create((frame: number) => {
+            for (const st of steps) {
+                const { start: s, end: e } = st;
+                if (frame >= s && frame <= e) {
+                    st.step(frame);
                 }
-            },
-        };
+            }
+        }, start, end));
     }
-    // give(): RunGiver {
-    //     const self = this;
-    //     return (track: Track) => {
-    //         let ups: Updater[] = [];
-    //         if ((self.updates?.size ?? 0) <= 0) {
-    //             throw Error(`No updatables`);
-    //         }
-    //         let _out = -Infinity;
-    //         let _in = -Infinity;
-    //         for (const cur of this.updates ?? []) {
-    //             const up = cur.updater();
-    //             const { start: S, end: E } = up;
-    //             if (isFinite(E) && E > _out) {
-    //                 _out = E;
-    //             }
-    //             if (S < _in) {
-    //                 _in = S;
-    //             }
-    //             ups.push(up);
-    //         }
-    //         if (_out <= _in) {
-    //             throw Error(`Unexpected`);
-    //         }
+    check_stepper<U>(stepper: Stepper<U>) {
+        return stepper;
+    }
 
-    //         return {
-    //             _start: -Infinity,
-    //             _end: -Infinity,
-    //             resolve(frame: number, base_frame: number, hint_dur: number): void {
-    //                 this._start = frame;
-    //                 this._end = frame + (_out - _in);
-    //             },
-    //             run(): void {
-    //                 const start = this._start;
-    //                 const end = this._end;
-    //                 if (end <= start) {
-    //                     throw Error(`Unexpected`);
-    //                 }
-    //                 if (_out - _in !== end - start) {
-    //                     throw Error(`Unexpected`);
-    //                 }
-    //                 track.add_update({
-    //                     updater() {
-    //                         return {
-    //                             start,
-    //                             end,
-    //                             update(frame: number) {
-    //                                 const off = _in + (frame - start);
-    //                                 for (const up of ups) {
-    //                                     const { start: s, end: e } = up;
-    //                                     if (e <= s) {
-    //                                         throw Error(`Unexpected`);
-    //                                     }
-    //                                     if (off < s || off >= e) {
-    //                                         continue;
-    //                                     }
-    //                                     up.update(off);
-    //                                 }
-    //                             },
-    //                         };
-    //                     },
-    //                 });
-    //             },
-    //             get_active_dur(): number {
-    //                 return this._end - this._start;
-    //             },
-    //         };
-    //     };
-    // }
 }
 
 function feed(track: Track, cur: Resolver, frame: number, base_frame: number) {
     const x = cur(frame, base_frame, track.hint_dur);
     const d = x.end - x.start;
-    // cur.resolve(frame, base_frame, track.hint_dur);
-    // const d = cur.get_active_dur();
     /* c8 ignore start */
     if (d < 0) {
         throw new Error(`Unexpected`);
     }
     /* c8 ignore stop */
-    // cur.run();
     x(track);
     return d;
 }

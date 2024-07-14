@@ -91,7 +91,7 @@ export function To(
             for (let cur: Params2 | undefined = _first; cur; cur = cur._next) {
                 const { property, extra, value } = cur;
                 property.key_value(end, value, { start, ...extra });
-                track.add_update(property);
+                track.supply(property);
             }
         }
         sup.start = -Infinity;

@@ -1,4 +1,4 @@
-export class Stepper<V = any> {
+export class Stepper<V = void> {
     start: number = 0;
     end: number = 0;
     step(frame: number): V {
@@ -11,7 +11,7 @@ export class Stepper<V = any> {
         this.end = end;
     }
 
-    repeat(count: number, freeze: boolean = true) {
+    repeat(count: number) {
         const E = this.end;
         const S = this.start;
         const u = this.step;
@@ -24,7 +24,7 @@ export class Stepper<V = any> {
         return new Stepper((frame: number) => u(S + ((frame - S) % i)), S, Z);
     }
 
-    bounce(repeat_count: number, freeze: boolean = true) {
+    bounce(repeat_count: number) {
         const E = this.end;
         const S = this.start;
         const u = this.step;
@@ -84,4 +84,8 @@ export class Stepper<V = any> {
     static create<U>(step: (frame: number) => U, start: number, end: number) {
         return new Stepper<U>(step, start, end);
     }
+}
+
+export interface Steppable {
+    stepper(): Stepper;
 }

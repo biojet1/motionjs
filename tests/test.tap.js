@@ -199,19 +199,16 @@ test.test("bounce repeat one", (t) => {
     t.equal(tr.frame, 8);
     tr.run(To(c, 5));
     t.equal(tr.frame, 12);
-    a.repeat(1, true);
-    t.same(a.frame_range(), [0, 9]);
-    t.same(cata(a, 0, 10), [1, 2, 3, 4, 5, 4, 3, 2, 1, 1]);
-    b.repeat(2);
-    t.same(b.frame_range(), [4, 14]);
+    a.check_stepper = (s) => s.bounce(1).clamp();
+    t.same([...a.enum_values(0, 10)], [1, 2, 3, 4, 5, 4, 3, 2, 1, 1, 1]);
+    b.check_stepper = (s) => s.repeat(2).clamp();
     t.same(cata(b, 0, 16), [2, 2, 2, 2, 2, 3, 4, 5, 6, 2, 3, 4, 5, 6, 6, 6]);
-    c.repeat(2, true);
+    c.check_stepper = (s) => s.bounce(2).clamp();
     t.same(cata(c, 0, 27), [9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 7, 6, 5, 6, 7, 8, 9, 8, 7, 6, 5, 6, 7, 8, 9, 9, 9]);
-    t.same(c.frame_range(), [8, 25]);
-    a.repeat(-1);
+    a.check_stepper = (s) => s.repeat(Infinity);
     t.same(cata(a, 0, 20), [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5]);
-    a.repeat(-1, true);
-    t.same(cata(a, 0, 24), [1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 3, 4, 5, 4, 3, 2]);
+    a.check_stepper = (s) => s.bounce(Infinity);
+    t.same([...a.enum_values(0, 23)], [1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 3, 4, 5, 4, 3, 2]);
     t.end();
 });
 
