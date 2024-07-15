@@ -178,7 +178,7 @@ export class Animated<V, K extends Keyframe<V> = Keyframe<V>> implements Steppab
         const first = kfs.at(0);
         const last = kfs.at(-1);
         if (first && last) {
-            return this.check_stepper(Stepper.create(step, first.time, last.time).clamp());
+            return this.check_stepper(Stepper.create(step, first.time, last.time)).clamp();
         }
         throw Error(`Unexpected by '${this.constructor.name}'`);
     }

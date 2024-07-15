@@ -15,7 +15,7 @@ class RelInit extends RelOp {
 
 
     override apply(k: IProperty<any>, e: RelEntry2, i: number, a: RelEntry2[]) {
-        k.key_value(e.end, k.initial_value(), this.extra);
+        k.key_value(e.to, k.initial_value(), this.extra);
     }
 }
 
@@ -28,9 +28,9 @@ class RelTo extends RelOp {
     override apply(k: IProperty<any>, e: RelEntry2, i: number, a: RelEntry2[]) {
         let { extra } = this
         if (i == 0 && e.offset > 0) {
-            extra = { ...extra, start: e.start }
+            extra = { ...extra, start: e.from }
         }
-        k.key_value(e.end, this.value, extra);
+        k.key_value(e.to, this.value, extra);
     }
 }
 
@@ -41,6 +41,12 @@ class RelAdd extends RelTo {
     }
 }
 
+class RelFirst extends RelInit {
+    override apply(k: IProperty<any>, e: RelEntry2, i: number, a: RelEntry2[]) {
+        k.key_value(e.to, k.get_value(a[0].to), this.extra);
+    }
+}
+
 type RelEntry = {
     props: IProperty<any>[];
     op: RelOp;
@@ -48,8 +54,8 @@ type RelEntry = {
 
 type RelEntry2 = {
     offset: number;
-    end: number;
-    start: number;
+    to: number;
+    from: number;
     op: RelOp;
 };
 
@@ -107,7 +113,7 @@ export function Rel(t: string | number): Proxy {
                         op.extra.easing = track.easing
                     }
 
-                    a.push({ offset: frame, end: NaN, start: NaN, op });
+                    a.push({ offset: frame, to: NaN, from: NaN, op });
                 }
             }
         }
@@ -127,8 +133,8 @@ export function Rel(t: string | number): Proxy {
         return function (frame: number, base_frame: number, hint_dur: number) {
             for (const v of map.values()) {
                 for (const e of v) {
-                    e.end = frame + e.offset;
-                    e.start = frame;
+                    e.to = frame + e.offset;
+                    e.from = frame;
                 }
             }
             sup.start = frame;
@@ -205,6 +211,15 @@ export function Rel(t: string | number): Proxy {
         cur.push({ props: list_props(props), op: new RelInit(extra) });
         return this;
     };
+    fn.first = function (
+        props: IProperty<any>[] | IProperty<any>,
+        extra: KeyExtra = {}
+    ) {
+        cur.push({ props: list_props(props), op: new RelFirst(extra) });
+        return this;
+    };
+
+
     fn.last_t = NaN;
     fn.at(t);
     return fn;

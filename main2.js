@@ -477,7 +477,10 @@ function main(renderer) {
 
     const { Easing } = m3;
     // console.log(p3);
-    p3.check_stepper((s) => s.bounce(2));
+    p3.check_stepper = ((s) => s.bounce(Infinity));
+
+    console.log(p3.kfs);
+    console.log(p3.stepper());
     root.track(0).run(
         Rel(0).to(wid, 1).to(ro1, 0).initial(pox)
             .d(1).to(wid, 3).to(ro1, 1)
@@ -520,8 +523,11 @@ function main(renderer) {
     {
         const pos = new m3.PositionProperty(exct, "position");
         const rx = new m3.NumericProperty(exct.rotation, "x");
+
         const tr1 = root.track(0);
         console.log("TR", tr1.frame);
+        pos.check_stepper = ((s) => s.bounce(Infinity));
+        rx.check_stepper = ((s) => s.bounce(Infinity));
         tr1.run(Rel(3).to(pos, [-1, 2, 3])
             .at(1).to([pos], [-3, -2, -1])
             .at('66%').to([pos], [0, 0, 0]).add(rx, 1)
@@ -529,15 +535,14 @@ function main(renderer) {
             .at('90%').to(rx, 0, { easing: Easing.inoutexpo })
         );
         console.log("TR", tr1.frame);
-        pos.check_stepper((s) => s.bounce(Infinity));
-        rx.check_stepper((s) => s.bounce(Infinity));
+
         // tr1.run(To(pos, [1, 2, 3]));
         // pos.set_value(new THREE.Vector3(1, 2, 3));
         // root.track(0).run(To(pos, [2, 2, 2]))
         // console.log(...pos.enum_values(0, 1.5 * 60));
         // pos.set_value(new THREE.Vector3(-2, -2, 2));
     }
-    wid.check_stepper((s) => s.bounce(Infinity));
+    wid.check_stepper = ((s) => s.bounce(Infinity));
 
 
     return { root, scene, camera };

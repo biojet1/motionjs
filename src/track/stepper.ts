@@ -1,9 +1,7 @@
 export class Stepper<V = void> {
-    start: number = 0;
-    end: number = 0;
-    step(frame: number): V {
-        throw new Error(`Not implemeneted`);
-    }
+    start: number;
+    end: number;
+    step: ((frame: number) => V);
 
     constructor(step: (frame: number) => V, start: number, end: number) {
         this.step = step;
@@ -24,7 +22,7 @@ export class Stepper<V = void> {
         return new Stepper((frame: number) => u(S + ((frame - S) % i)), S, Z);
     }
 
-    bounce(repeat_count: number) {
+    bounce(repeat_count: number = 1) {
         const E = this.end;
         const S = this.start;
         const u = this.step;
@@ -47,8 +45,11 @@ export class Stepper<V = void> {
     }
 
     slice(start: number, end: number) {
-        let e = end ?? this.end;
-        let s = start ?? this.start;
+        const { start: S, end: E } = this;
+        let e = end ?? E;
+        let s = start ?? S;
+        if (e < 0) e += E;
+        if (s < 0) s += E;
         return new Stepper(this.step, s, e);
     }
 
@@ -83,6 +84,9 @@ export class Stepper<V = void> {
 
     static create<U>(step: (frame: number) => U, start: number, end: number) {
         return new Stepper<U>(step, start, end);
+    }
+    static echo(start: number, end: number) {
+        return new Stepper((x) => x, start, end);
     }
 }
 
